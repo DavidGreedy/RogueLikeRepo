@@ -8,7 +8,7 @@ public class ProjectileBehaviour : MonoBehaviour
     private float m_destroySpeedSqrd;
 
     [SerializeField]
-    private Rigidbody m_rigidbody;
+    private FastCollision m_fastCollision;
 
     [SerializeField]
     private int m_damage;
@@ -18,28 +18,33 @@ public class ProjectileBehaviour : MonoBehaviour
     public void Launch(Vector3 position, Vector3 velocity, Quaternion rotation)
     {
         transform.position = position;
-        m_rigidbody.velocity = velocity;
+        m_fastCollision.velocity = velocity;
         transform.rotation = rotation;
     }
 
     public void Launch(Vector3 position, Vector3 velocity)
     {
         transform.position = position;
-        m_rigidbody.velocity = velocity;
+        m_fastCollision.velocity = velocity;
         transform.rotation = Quaternion.LookRotation(velocity);
     }
 
     private void Update()
     {
-        if (m_rigidbody.velocity.sqrMagnitude < m_destroySpeedSqrd)
-        {
-            this.gameObject.SetActive(false);
-        }
+        //if (m_fastCollision.velocity.sqrMagnitude < m_destroySpeedSqrd)
+        //{
+        //    this.gameObject.SetActive(false);
+        //}
     }
 
     private void OnCollisionEnter(Collision other)
     {
-        Debug.Log("Collision " + other.gameObject.tag);
+        //Debug.Log("Collision with " + LayerMask.LayerToName(other.gameObject.layer) + " Layer");
+
+        switch (other.gameObject.layer)
+        {
+
+        }
         CharacterBehaviour c = other.collider.GetComponent<CharacterBehaviour>();
         if (c != null)
         {
