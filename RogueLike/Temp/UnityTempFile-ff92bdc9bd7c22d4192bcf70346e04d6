@@ -1,0 +1,213 @@
+-debug
+-target:library
+-nowarn:0169
+-langversion:4
+-out:Temp/Assembly-CSharp.dll
+-r:"C:/Program Files/Unity 5.5.0f3/Editor/Data/Managed/UnityEngine.dll"
+-r:Library/ScriptAssemblies/Assembly-CSharp-firstpass.dll
+-r:"C:/Program Files/Unity 5.5.0f3/Editor/Data/UnityExtensions/Unity/GUISystem/UnityEngine.UI.dll"
+-r:"C:/Program Files/Unity 5.5.0f3/Editor/Data/UnityExtensions/Unity/Networking/UnityEngine.Networking.dll"
+-r:"C:/Program Files/Unity 5.5.0f3/Editor/Data/UnityExtensions/Unity/PlaymodeTestsRunner/UnityEngine.PlaymodeTestsRunner.dll"
+-r:"C:/Program Files/Unity 5.5.0f3/Editor/Data/UnityExtensions/Unity/UnityAnalytics/UnityEngine.Analytics.dll"
+-r:"C:/Program Files/Unity 5.5.0f3/Editor/Data/UnityExtensions/Unity/UnityHoloLens/RuntimeEditor/UnityEngine.HoloLens.dll"
+-r:"C:/Program Files/Unity 5.5.0f3/Editor/Data/UnityExtensions/Unity/UnityVR/RuntimeEditor/UnityEngine.VR.dll"
+-r:Assets/Plugins/MySql.Data.dll
+-r:Assets/Plugins/System.Data.dll
+-r:Assets/Plugins/System.Drawing.dll
+-r:Assets/SabreCSG/Scripts/SabreCSG.Core.dll
+-r:"Assets/TextMesh Pro/Plugins/TextMeshPro.dll"
+-r:"C:/Program Files/Unity 5.5.0f3/Editor/Data/Managed/UnityEditor.dll"
+-define:UNITY_5_3_OR_NEWER
+-define:UNITY_5_4_OR_NEWER
+-define:UNITY_5_5_OR_NEWER
+-define:UNITY_5_5_0
+-define:UNITY_5_5
+-define:UNITY_5
+-define:ENABLE_AUDIO
+-define:ENABLE_CACHING
+-define:ENABLE_CLOTH
+-define:ENABLE_DUCK_TYPING
+-define:ENABLE_GENERICS
+-define:ENABLE_MICROPHONE
+-define:ENABLE_MULTIPLE_DISPLAYS
+-define:ENABLE_PHYSICS
+-define:ENABLE_SPRITERENDERER_FLIPPING
+-define:ENABLE_SPRITES
+-define:ENABLE_TERRAIN
+-define:ENABLE_RAKNET
+-define:ENABLE_UNET
+-define:ENABLE_LZMA
+-define:ENABLE_UNITYEVENTS
+-define:ENABLE_WEBCAM
+-define:ENABLE_WWW
+-define:ENABLE_CLOUD_SERVICES_COLLAB
+-define:ENABLE_CLOUD_SERVICES_ADS
+-define:ENABLE_CLOUD_HUB
+-define:ENABLE_CLOUD_PROJECT_ID
+-define:ENABLE_CLOUD_SERVICES_UNET
+-define:ENABLE_CLOUD_SERVICES_BUILD
+-define:ENABLE_CLOUD_LICENSE
+-define:ENABLE_EDITOR_METRICS
+-define:ENABLE_EDITOR_METRICS_CACHING
+-define:INCLUDE_DYNAMIC_GI
+-define:INCLUDE_GI
+-define:PLATFORM_SUPPORTS_MONO
+-define:RENDER_SOFTWARE_CURSOR
+-define:INCLUDE_PUBNUB
+-define:ENABLE_PLAYMODE_TESTS_RUNNER
+-define:ENABLE_SCRIPTING_NEW_CSHARP_COMPILER
+-define:UNITY_STANDALONE_WIN
+-define:UNITY_STANDALONE
+-define:ENABLE_SUBSTANCE
+-define:ENABLE_RUNTIME_GI
+-define:ENABLE_MOVIES
+-define:ENABLE_NETWORK
+-define:ENABLE_CRUNCH_TEXTURE_COMPRESSION
+-define:ENABLE_UNITYWEBREQUEST
+-define:ENABLE_CLOUD_SERVICES
+-define:ENABLE_CLOUD_SERVICES_ANALYTICS
+-define:ENABLE_CLOUD_SERVICES_PURCHASING
+-define:ENABLE_CLOUD_SERVICES_CRASH_REPORTING
+-define:ENABLE_EVENT_QUEUE
+-define:ENABLE_CLUSTERINPUT
+-define:ENABLE_VIDEO
+-define:ENABLE_VR
+-define:ENABLE_WEBSOCKET_HOST
+-define:ENABLE_MONO
+-define:ENABLE_PROFILER
+-define:DEBUG
+-define:TRACE
+-define:UNITY_ASSERTIONS
+-define:UNITY_EDITOR
+-define:UNITY_EDITOR_64
+-define:UNITY_EDITOR_WIN
+-define:UNITY_TEAM_LICENSE
+-define:ENABLE_VSTU
+-define:TMP_PRESENT
+Assets/MeleeWeaponTrail/Example/Scripts/LookAtTarget.cs
+Assets/MeleeWeaponTrail/Example/Scripts/MouseMove.cs
+Assets/MeleeWeaponTrail/Example/Scripts/SwooshTest.cs
+Assets/MeleeWeaponTrail/Scripts/Interpolate.cs
+Assets/MeleeWeaponTrail/Scripts/MeleeWeaponTrail.cs
+Assets/SabreCSG/Scripts/Brushes/PrimitiveBrush.cs
+Assets/SabreCSG/Scripts/CSGModel.cs
+Assets/SabreCSG/Scripts/CSGModelBase.cs
+Assets/SabreCSG/Scripts/CSGModelRuntime.cs
+Assets/SabreCSG/Scripts/CallbackEvents.cs
+Assets/SabreCSG/Scripts/CurrentSettings.cs
+Assets/SabreCSG/Scripts/ExpandPropertiesAttribute.cs.cs
+Assets/SabreCSG/Scripts/Extensions/ColorHex.cs
+Assets/SabreCSG/Scripts/Extensions/EditorHelper.cs
+Assets/SabreCSG/Scripts/Extensions/EnumHelper.cs
+Assets/SabreCSG/Scripts/Extensions/Extensions.cs
+Assets/SabreCSG/Scripts/Extensions/MathHelper.cs
+Assets/SabreCSG/Scripts/Extensions/Matrices/Matrix2x2.cs
+Assets/SabreCSG/Scripts/Extensions/Matrices/Matrix3x2.cs
+Assets/SabreCSG/Scripts/Extensions/MeshExtensions.cs
+Assets/SabreCSG/Scripts/Extensions/StringHelper.cs
+Assets/SabreCSG/Scripts/Extensions/TransformData.cs
+Assets/SabreCSG/Scripts/Extensions/TransformHelper.cs
+Assets/SabreCSG/Scripts/Extensions/WorldTransformData.cs
+Assets/SabreCSG/Scripts/Geometry/AdjacencyHelper.cs
+Assets/SabreCSG/Scripts/Geometry/BrushFactory.cs
+Assets/SabreCSG/Scripts/Geometry/GeometryHelper.cs
+Assets/SabreCSG/Scripts/Geometry/MeshHelper.cs
+Assets/SabreCSG/Scripts/Geometry/OBJFactory.cs
+Assets/SabreCSG/Scripts/Geometry/OBJVertexList.cs
+Assets/SabreCSG/Scripts/Geometry/PolygonFactory.cs
+Assets/SabreCSG/Scripts/Geometry/UVUtility.cs
+Assets/SabreCSG/Scripts/IPostBuildListener.cs
+Assets/SabreCSG/Scripts/Input/EditorKeyMappings.cs
+Assets/SabreCSG/Scripts/Input/KeyMappings.cs
+Assets/SabreCSG/Scripts/LinearFPSCam.cs
+Assets/SabreCSG/Scripts/Pair.cs
+Assets/SabreCSG/Scripts/Tools/ClipEditor.cs
+Assets/SabreCSG/Scripts/Tools/DrawEditor.cs
+Assets/SabreCSG/Scripts/Tools/EdgeEditor.cs
+Assets/SabreCSG/Scripts/Tools/ResizeEditor.cs
+Assets/SabreCSG/Scripts/Tools/ResizeHandlePair.cs
+Assets/SabreCSG/Scripts/Tools/SurfaceEditor.cs
+Assets/SabreCSG/Scripts/Tools/Tool.cs
+Assets/SabreCSG/Scripts/Tools/Utilities/BrushUtility.cs
+Assets/SabreCSG/Scripts/Tools/Utilities/ClipUtility.cs
+Assets/SabreCSG/Scripts/Tools/Utilities/DrawUtility.cs
+Assets/SabreCSG/Scripts/Tools/Utilities/EdgeUtility.cs
+Assets/SabreCSG/Scripts/Tools/Utilities/SurfaceUtility.cs
+"Assets/SabreCSG/Scripts/Tools/Utilities/Vertex Weld Ops/VertexWeldCentroidOperation.cs"
+"Assets/SabreCSG/Scripts/Tools/Utilities/Vertex Weld Ops/VertexWeldOperation.cs"
+"Assets/SabreCSG/Scripts/Tools/Utilities/Vertex Weld Ops/VertexWeldToleranceOperation.cs"
+Assets/SabreCSG/Scripts/Tools/Utilities/VertexUtility.cs
+Assets/SabreCSG/Scripts/Tools/VertexEditor.cs
+Assets/SabreCSG/Scripts/UI/CSGGrid.cs
+Assets/SabreCSG/Scripts/UI/GridManager.cs
+Assets/SabreCSG/Scripts/UI/RadialMenu.cs
+Assets/SabreCSG/Scripts/UI/SabreCSGPreferences.cs
+Assets/SabreCSG/Scripts/UI/SabreCSGResources.cs
+Assets/SabreCSG/Scripts/UI/SabreGUIHelper.cs
+Assets/SabreCSG/Scripts/UI/SabreGUILayout.cs
+Assets/SabreCSG/Scripts/UI/SabreGraphics.cs
+Assets/SabreCSG/Scripts/UI/SabreInput.cs
+Assets/SabreCSG/Scripts/UI/SabreMouse.cs
+Assets/SabreCSG/Scripts/UI/Toolbar.cs
+Assets/SabreCSG/Scripts/UI/VertexColorWindow.cs
+Assets/SabreCSG/Scripts/UpdateUtility.cs
+Assets/Scripts/AICharacterController.cs
+Assets/Scripts/CharacterBehaviour.cs
+Assets/Scripts/CharacterController.cs
+Assets/Scripts/FastCollision.cs
+Assets/Scripts/FixedPool.cs
+Assets/Scripts/GameBehaviour.cs
+Assets/Scripts/GamePad.cs
+Assets/Scripts/GameSettings.cs
+Assets/Scripts/HealthBehaviour.cs
+Assets/Scripts/MeleeWeaponBehaviour.cs
+Assets/Scripts/PoolManager.cs
+Assets/Scripts/PooledBehaviour.cs
+Assets/Scripts/ProjectileBehaviour.cs
+Assets/Scripts/RangedWeaponBehaviour.cs
+Assets/Scripts/RangedWeaponProperties.cs
+Assets/Scripts/SQL_Database.cs
+Assets/Scripts/SingletonBehaviour.cs
+Assets/Scripts/Team.cs
+Assets/Scripts/Test.cs
+Assets/Scripts/TopDownCamera.cs
+Assets/Scripts/TwinStickCrosshairBehaviour.cs
+Assets/Scripts/WeaponBehaviour.cs
+Assets/Scripts/WorldSpaceHealthBar.cs
+"Assets/TextMesh Pro/Examples/Scripts/Benchmark01.cs"
+"Assets/TextMesh Pro/Examples/Scripts/Benchmark01_UGUI.cs"
+"Assets/TextMesh Pro/Examples/Scripts/Benchmark02.cs"
+"Assets/TextMesh Pro/Examples/Scripts/Benchmark03.cs"
+"Assets/TextMesh Pro/Examples/Scripts/Benchmark04.cs"
+"Assets/TextMesh Pro/Examples/Scripts/CameraController.cs"
+"Assets/TextMesh Pro/Examples/Scripts/ChatController.cs"
+"Assets/TextMesh Pro/Examples/Scripts/ObjectSpin.cs"
+"Assets/TextMesh Pro/Examples/Scripts/ShaderPropAnimator.cs"
+"Assets/TextMesh Pro/Examples/Scripts/SimpleScript.cs"
+"Assets/TextMesh Pro/Examples/Scripts/SkewTextExample.cs"
+"Assets/TextMesh Pro/Examples/Scripts/TMP_DigitValidator.cs"
+"Assets/TextMesh Pro/Examples/Scripts/TMP_ExampleScript_01.cs"
+"Assets/TextMesh Pro/Examples/Scripts/TMP_FrameRateCounter.cs"
+"Assets/TextMesh Pro/Examples/Scripts/TMP_TextEventCheck.cs"
+"Assets/TextMesh Pro/Examples/Scripts/TMP_TextEventHandler.cs"
+"Assets/TextMesh Pro/Examples/Scripts/TMP_TextInfoDebugTool.cs"
+"Assets/TextMesh Pro/Examples/Scripts/TMP_TextSelector_A.cs"
+"Assets/TextMesh Pro/Examples/Scripts/TMP_TextSelector_B.cs"
+"Assets/TextMesh Pro/Examples/Scripts/TMP_UiFrameRateCounter.cs"
+"Assets/TextMesh Pro/Examples/Scripts/TMPro_InstructionOverlay.cs"
+"Assets/TextMesh Pro/Examples/Scripts/TeleType.cs"
+"Assets/TextMesh Pro/Examples/Scripts/TextConsoleSimulator.cs"
+"Assets/TextMesh Pro/Examples/Scripts/TextMeshProFloatingText.cs"
+"Assets/TextMesh Pro/Examples/Scripts/TextMeshSpawner.cs"
+"Assets/TextMesh Pro/Examples/Scripts/VertexColorCycler.cs"
+"Assets/TextMesh Pro/Examples/Scripts/VertexJitter.cs"
+"Assets/TextMesh Pro/Examples/Scripts/VertexShakeA.cs"
+"Assets/TextMesh Pro/Examples/Scripts/VertexShakeB.cs"
+"Assets/TextMesh Pro/Examples/Scripts/VertexZoom.cs"
+"Assets/TextMesh Pro/Examples/Scripts/WarpTextExample.cs"
+-r:"C:\Program Files\Unity 5.5.0f3\Editor\Data\MonoBleedingEdge\lib\mono\unity\System.Runtime.Serialization.dll"
+-r:"C:\Program Files\Unity 5.5.0f3\Editor\Data\MonoBleedingEdge\lib\mono\unity\System.Xml.Linq.dll"
+-r:"C:\Program Files\Unity 5.5.0f3\Editor\Data\MonoBleedingEdge\lib\mono\unity\UnityScript.dll"
+-r:"C:\Program Files\Unity 5.5.0f3\Editor\Data\MonoBleedingEdge\lib\mono\unity\UnityScript.Lang.dll"
+-r:"C:\Program Files\Unity 5.5.0f3\Editor\Data\MonoBleedingEdge\lib\mono\unity\Boo.Lang.dll"
+-sdk:unity

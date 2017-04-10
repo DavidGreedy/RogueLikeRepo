@@ -179,3 +179,5 @@ MonoBehaviour:
   m_remainingDistance: 0
   velocity: {x: 0, y: 0, z: 0}
   m_bounceAngle: 30
+  maxBounces: 3
+  currentBounces: 0

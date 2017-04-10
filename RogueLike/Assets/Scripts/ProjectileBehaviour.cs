@@ -18,14 +18,14 @@ public class ProjectileBehaviour : MonoBehaviour
     public void Launch(Vector3 position, Vector3 velocity, Quaternion rotation)
     {
         transform.position = position;
-        m_fastCollision.velocity = velocity;
+        m_fastCollision.Init(velocity.normalized, velocity.magnitude);
         transform.rotation = rotation;
     }
 
     public void Launch(Vector3 position, Vector3 velocity)
     {
         transform.position = position;
-        m_fastCollision.velocity = velocity;
+        m_fastCollision.Init(velocity.normalized, velocity.magnitude);
         transform.rotation = Quaternion.LookRotation(velocity);
     }
 

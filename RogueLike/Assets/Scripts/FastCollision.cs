@@ -1,36 +1,41 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 public class FastCollision : MonoBehaviour
 {
-    //public Rigidbody m_rigidbody;
     public LayerMask m_layer;
 
     private Ray ray;
     private RaycastHit hit;
 
-    [SerializeField]
     private Vector3 m_position;
-
-    [SerializeField]
     Vector3 m_direction;
-
-    [SerializeField]
     private float m_remainingDistance;
 
-    public Vector3 velocity;
+    private Vector3 velocity;
 
-    private float speed = 100f;
+    private float speed = 10f;
 
     private Queue<Vector3> prevPositions;
 
+    [SerializeField, Range(0, 90)]
+    private float m_bounceAngle = 30f;
+
     [SerializeField]
-    private float m_bounceAngle = 30;
+    private int maxBounces;
+
+    private int currentBounces;
+
+    [SerializeField]
+    private bool drawPath;
+
+    [SerializeField, Range(1, 10)]
+    private int pathPositionCount;
 
     private void Start()
     {
-        prevPositions = new Queue<Vector3>(20);
+        prevPositions = new Queue<Vector3>();
+        currentBounces = maxBounces;
     }
 
     void Update()
@@ -39,25 +44,29 @@ public class FastCollision : MonoBehaviour
         m_direction = velocity.normalized;
         m_remainingDistance = velocity.magnitude * Time.fixedDeltaTime;
 
-        Tick(ref m_position, ref m_direction, ref m_remainingDistance);
-
-        Debug.DrawLine(transform.position, m_position);
+        Tick(ref m_position, ref m_direction, ref m_remainingDistance, ref currentBounces);
 
         transform.forward = m_direction;
         transform.position = m_position;
         velocity = m_direction * speed;
-        if (prevPositions.Count > 20)
+
+        if (drawPath)
         {
-            prevPositions.Dequeue();
+            while (prevPositions.Count > pathPositionCount)
+            {
+                prevPositions.Dequeue();
+            }
+            prevPositions.Enqueue(transform.position);
         }
-        prevPositions.Enqueue(transform.position);
-        Debug.DrawLine(transform.position, transform.position + velocity * Time.fixedDeltaTime);
+
+        Debug.DrawLine(transform.position, transform.position + velocity * Time.fixedDeltaTime, Color.blue);
     }
 
-    private void OnDrawGizmos()
+    private void OnDrawGizmosSelected()
     {
-        if (Application.isPlaying && prevPositions.Count > 20)
+        if (drawPath && Application.isPlaying)
         {
+            Gizmos.color = Color.cyan;
             Vector3[] p = prevPositions.ToArray();
             for (int i = 0; i < p.Length - 1; i++)
             {
@@ -66,7 +75,7 @@ public class FastCollision : MonoBehaviour
         }
     }
 
-    void Tick(ref Vector3 position, ref Vector3 direction, ref float remainingDistance)
+    void Tick(ref Vector3 position, ref Vector3 direction, ref float remainingDistance, ref int remainingBounces)
     {
         ray.origin = position;
         ray.direction = direction;
@@ -80,7 +89,7 @@ public class FastCollision : MonoBehaviour
             float angle = Vector3.Angle(-direction, hit.normal);
             //Debug.Log(angle);
 
-            if (angle < 90 - m_bounceAngle)
+            if (remainingBounces <= 0 || angle < 90 - m_bounceAngle)
             {
                 gameObject.SetActive(false);
                 return;
@@ -92,12 +101,18 @@ public class FastCollision : MonoBehaviour
             prevPositions.Enqueue(position);
 
             //Debug.DrawLine(position, position + (direction * remainingDistance));
-
-            Tick(ref position, ref direction, ref remainingDistance);
+            remainingBounces -= 1;
+            Tick(ref position, ref direction, ref remainingDistance, ref remainingBounces);
         }
         else
         {
             position += direction * remainingDistance;
         }
+    }
+
+    public void Init(Vector3 direction, float magnitude)
+    {
+        velocity = direction * magnitude;
+        speed = magnitude;
     }
 }
