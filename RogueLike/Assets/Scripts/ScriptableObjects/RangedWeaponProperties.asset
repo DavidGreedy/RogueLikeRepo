@@ -11,7 +11,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c09a986ad37217e4fa72aea9a3711994, type: 3}
   m_Name: RangedWeaponProperties
   m_EditorClassIdentifier: 
-  muzzleVelocity: 10
+  muzzleVelocity: 100
   spread: 0
   maxAmmo: 100
   startingAmmo: 10

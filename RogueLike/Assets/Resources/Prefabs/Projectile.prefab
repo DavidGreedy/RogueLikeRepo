@@ -49,7 +49,7 @@ TrailRenderer:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1566959608873674}
-  m_Enabled: 0
+  m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_MotionVectors: 1
@@ -174,10 +174,7 @@ MonoBehaviour:
   m_layer:
     serializedVersion: 2
     m_Bits: 768
-  m_position: {x: 0, y: 0, z: 0}
-  m_direction: {x: 0, y: 0, z: 0}
-  m_remainingDistance: 0
-  velocity: {x: 0, y: 0, z: 0}
   m_bounceAngle: 30
-  maxBounces: 3
-  currentBounces: 0
+  maxBounces: 5
+  drawPath: 1
+  pathPositionCount: 10
