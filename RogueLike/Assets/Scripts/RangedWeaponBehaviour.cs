@@ -4,8 +4,8 @@ using UnityEngine;
 
 public class RangedWeaponBehaviour : WeaponBehaviour
 {
-    [SerializeField]
-    private RangedWeaponProperties m_weaponProperties;
+    
+    public RangedWeaponProperties m_weaponProperties;
 
     [SerializeField]
     private int m_currentAmmo;

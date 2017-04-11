@@ -9,6 +9,8 @@ public class RangedWeaponProperties : ScriptableObject
     public float spread;
     public int maxAmmo;
     public int startingAmmo;
+    public enum weaponName {M4, Thompson, Kar98k };
+    public weaponName _weaponName; 
 
     public Vector3 projectileOrigin;
 

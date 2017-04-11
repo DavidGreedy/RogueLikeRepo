@@ -23,8 +23,8 @@ public class TwinStickCrosshairBehaviour : MonoBehaviour
 
     private Vector2 m_screenPosition = Vector2.zero;
 
-    [SerializeField]
-    private RangedWeaponBehaviour m_weapon;
+    //[SerializeField]
+    public RangedWeaponBehaviour m_weapon;
 
     [SerializeField]
     private float m_length;
