@@ -5,11 +5,12 @@ using GamepadInput;
 
 public class WeaponPickScript : MonoBehaviour {
 
-    RangedWeaponProperties thisWeapon;
+    public RangedWeaponProperties thisWeapon;
 
 	// Use this for initialization
-	void Start () {
-		
+	void Start ()
+    {
+
 	}
 	
 	// Update is called once per frame
@@ -24,13 +25,31 @@ public class WeaponPickScript : MonoBehaviour {
             TwinStickCrosshairBehaviour twinStick = col.GetComponent<Collider>().gameObject.GetComponent<TwinStickCrosshairBehaviour>();
             if (twinStick.m_weapon.m_weaponProperties._weaponName == thisWeapon._weaponName)
             {
+                SameWeapon();
                 print("More ammo");
+                PickupAction();
             }
             else if(twinStick.m_weapon.m_weaponProperties._weaponName != thisWeapon._weaponName && GamePad.GetButton(GamePad.Button.X, GamePad.Index.One))
             {
+                PickupWeapon();
                 print("Pick up new weapon");
             }
             print("Yes");
         }
+    }
+
+    void SameWeapon()
+    {
+
+    }
+
+    void PickupWeapon()
+    {
+
+    }
+
+    void PickupAction()
+    {
+        this.gameObject.SetActive(false);
     }
 }

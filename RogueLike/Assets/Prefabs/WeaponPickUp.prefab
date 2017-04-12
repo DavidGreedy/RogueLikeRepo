@@ -54,6 +54,7 @@ GameObject:
   - component: {fileID: 4860775682224856}
   - component: {fileID: 95577303269067934}
   - component: {fileID: 135754979813680008}
+  - component: {fileID: 114088445113318754}
   m_Layer: 0
   m_Name: WeaponPickUp
   m_TagString: Untagged
@@ -157,6 +158,18 @@ Animator:
   m_WarningMessage: 
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
+--- !u!114 &114088445113318754
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1728790347503966}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ceddba05d6e0ff44969412c2315b55f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  thisWeapon: {fileID: 11400000, guid: eba2a87997c3ba74098977febc1cfb5d, type: 2}
 --- !u!135 &135754979813680008
 SphereCollider:
   m_ObjectHideFlags: 1
@@ -164,7 +177,7 @@ SphereCollider:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1728790347503966}
   m_Material: {fileID: 0}
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_Enabled: 1
   serializedVersion: 2
   m_Radius: 1
