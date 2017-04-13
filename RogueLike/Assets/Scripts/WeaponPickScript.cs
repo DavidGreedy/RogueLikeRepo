@@ -3,33 +3,32 @@ using System.Collections.Generic;
 using UnityEngine;
 using GamepadInput;
 
-public class WeaponPickScript : MonoBehaviour {
-
+public class WeaponPickScript : MonoBehaviour
+{
     public RangedWeaponProperties thisWeapon;
 
-	// Use this for initialization
-	void Start ()
+    void Start()
     {
 
-	}
-	
-	// Update is called once per frame
-	void Update () {
-		
-	}
+    }
 
-    void OnTriggerEnter(Collider col)
+    void Update()
     {
-        if (col.GetComponent<Collider>().gameObject.GetComponent<CharacterController>()) //Appearantly the old way is deprecated as this is how you do it now...
+
+    }
+
+    void OnTriggerEnter(Collider other)
+    {
+        if (other.transform)
         {
-            TwinStickCrosshairBehaviour twinStick = col.GetComponent<Collider>().gameObject.GetComponent<TwinStickCrosshairBehaviour>();
-            if (twinStick.m_weapon.m_weaponProperties._weaponName == thisWeapon._weaponName)
+            WeaponBehaviour weapon = other.GetComponent<CharacterBehaviour>().EquippedWeapon;
+            if (weapon.gameObject.name == thisWeapon.name)
             {
                 SameWeapon();
                 print("More ammo");
                 PickupAction();
             }
-            else if(twinStick.m_weapon.m_weaponProperties._weaponName != thisWeapon._weaponName && GamePad.GetButton(GamePad.Button.X, GamePad.Index.One))
+            else if (weapon.gameObject.name != thisWeapon.name && GamePad.GetButton(GamePad.Button.X, GamePad.Index.One))
             {
                 PickupWeapon();
                 print("Pick up new weapon");
