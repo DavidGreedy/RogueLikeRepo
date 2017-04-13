@@ -24,4 +24,12 @@ public class WeaponCrate : MonoBehaviour {
         meshRenderer.enabled = false;
         WeaponPickUp.SetActive(true);
     }
+
+    void OnCollisionEnter(Collision col)
+    {
+        if (col.collider.gameObject.GetComponent<ProjectileBehaviour>())
+        {
+            CrateDestroy();
+        }
+    }
 }
