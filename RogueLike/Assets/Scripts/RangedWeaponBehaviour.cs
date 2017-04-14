@@ -4,7 +4,6 @@ using UnityEngine;
 
 public class RangedWeaponBehaviour : WeaponBehaviour
 {
-    
     public RangedWeaponProperties m_weaponProperties;
 
     [SerializeField]
@@ -12,6 +11,11 @@ public class RangedWeaponBehaviour : WeaponBehaviour
 
     [SerializeField]
     private LayerMask m_raycastLayer;
+
+    public Vector3 WorldOrigin
+    {
+        get { return transform.position + transform.TransformDirection(m_weaponProperties.projectileOrigin); }
+    }
 
     private void OnDrawGizmosSelected()
     {
