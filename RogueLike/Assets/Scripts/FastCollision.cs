@@ -86,6 +86,13 @@ public class FastCollision : MonoBehaviour
 
         if (hit.transform != null)
         {
+            SolidMonoBehaviour hitObject = hit.collider.GetComponent<SolidMonoBehaviour>();
+
+            if (hitObject)
+            {
+                hitObject.Hit(hit);
+            }
+
             float angle = Vector3.Angle(-direction, hit.normal);
             //Debug.Log(angle);
 

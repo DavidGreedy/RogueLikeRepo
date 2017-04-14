@@ -761,7 +761,6 @@ MonoBehaviour:
   m_crosshairRect: {fileID: 177049806}
   m_weapon: {fileID: 1649573306}
   m_length: 3
-  l: 0
 --- !u!1001 &505282607
 Prefab:
   m_ObjectHideFlags: 0
@@ -3785,7 +3784,6 @@ MonoBehaviour:
   m_crosshairRect: {fileID: 177049806}
   m_weapon: {fileID: 0}
   m_length: 300
-  l: 0
 --- !u!114 &727736100
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8264,9 +8262,19 @@ Prefab:
       propertyPath: m_Layer
       value: 9
       objectReference: {fileID: 0}
+    - target: {fileID: 114352911750061418, guid: 4244dc718dcc67e4fbd867225e9da1cd,
+        type: 2}
+      propertyPath: m_objectToSpawn
+      value: 
+      objectReference: {fileID: 2132223588}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: 4244dc718dcc67e4fbd867225e9da1cd, type: 2}
   m_IsPrefabParent: 0
+--- !u!1 &2132223588 stripped
+GameObject:
+  m_PrefabParentObject: {fileID: 1209012776684728, guid: 4244dc718dcc67e4fbd867225e9da1cd,
+    type: 2}
+  m_PrefabInternal: {fileID: 2051211565}
 --- !u!1 &2142497282
 GameObject:
   m_ObjectHideFlags: 0
