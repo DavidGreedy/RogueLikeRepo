@@ -12,6 +12,7 @@ public class CrateBehaviour : SolidMonoBehaviour
 
     void Destroy(RaycastHit hit)
     {
+        m_objectToSpawn.transform.parent = null;
         m_objectToSpawn.SetActive(true);
         Destroy(gameObject);
     }
