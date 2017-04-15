@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class FastCollision : MonoBehaviour
@@ -31,6 +32,8 @@ public class FastCollision : MonoBehaviour
 
     [SerializeField, Range(1, 10)]
     private int pathPositionCount;
+
+    public event Action<RaycastHit, SolidMonoBehaviour> OnHit;
 
     private void Start()
     {
@@ -88,9 +91,9 @@ public class FastCollision : MonoBehaviour
         {
             SolidMonoBehaviour hitObject = hit.collider.GetComponent<SolidMonoBehaviour>();
 
-            if (hitObject)
+            if (hitObject && OnHit != null)
             {
-                hitObject.Hit(hit);
+                OnHit.Invoke(hit, hitObject);
             }
 
             float angle = Vector3.Angle(-direction, hit.normal);

@@ -20,6 +20,7 @@ public class ProjectileBehaviour : MonoBehaviour
         transform.position = position;
         m_fastCollision.Init(velocity.normalized, velocity.magnitude);
         transform.rotation = rotation;
+        m_fastCollision.OnHit += HitObject;
     }
 
     public void Launch(Vector3 position, Vector3 velocity)
@@ -27,39 +28,12 @@ public class ProjectileBehaviour : MonoBehaviour
         transform.position = position;
         m_fastCollision.Init(velocity.normalized, velocity.magnitude);
         transform.rotation = Quaternion.LookRotation(velocity);
+        m_fastCollision.OnHit += HitObject;
     }
 
-    private void Update()
+    private void HitObject(RaycastHit hit, SolidMonoBehaviour hitObject)
     {
-        //if (m_fastCollision.velocity.sqrMagnitude < m_destroySpeedSqrd)
-        //{
-        //    this.gameObject.SetActive(false);
-        //}
-    }
-
-    private void OnCollisionEnter(Collision other)
-    {
-        //Debug.Log("Collision with " + LayerMask.LayerToName(other.gameObject.layer) + " Layer");
-
-        switch (other.gameObject.layer)
-        {
-
-        }
-        CharacterBehaviour c = other.collider.GetComponent<CharacterBehaviour>();
-        if (c != null)
-        {
-            c.Damage(Damage);
-            this.gameObject.SetActive(false);
-        }
-        //switch (other.collider.tag)
-        //{
-        //    case "Character":
-        //        {
-        //            CharacterBehaviour c = other.collider.GetComponent<CharacterBehaviour>();
-        //            c.Damage(Damage);
-        //            Destroy(this.gameObject);
-        //            break;
-        //        }
-        //}
+        print("Hit " + hitObject.name);
+        hitObject.Hit(hit, this);
     }
 }

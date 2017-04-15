@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-public class CharacterBehaviour : MonoBehaviour
+public class CharacterBehaviour : SolidMonoBehaviour
 {
     [SerializeField]
     private float m_movementSpeed;
@@ -112,5 +112,11 @@ public class CharacterBehaviour : MonoBehaviour
     {
         Debug.Log(string.Format("{0} has been killed", gameObject.name));
         Destroy(this.gameObject);
+    }
+
+    public override void Hit(RaycastHit hit, ProjectileBehaviour projectile)
+    {
+        base.Hit(hit, projectile);
+        Damage(projectile.Damage);
     }
 }

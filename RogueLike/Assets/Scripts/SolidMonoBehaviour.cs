@@ -3,9 +3,9 @@ using UnityEngine;
 
 public class SolidMonoBehaviour : MonoBehaviour
 {
-    public event Action<RaycastHit> OnHit;
+    public virtual event Action<RaycastHit> OnHit;
 
-    public void Hit(RaycastHit hit)
+    public virtual void Hit(RaycastHit hit, ProjectileBehaviour projectile)
     {
         if (OnHit != null)
         {
