@@ -8,6 +8,7 @@ public class AICharacterController : MonoBehaviour
     public Transform target;
 
     public NavMeshAgent navAgent;
+
     private void Update()
     {
         navAgent.SetDestination(target.position);

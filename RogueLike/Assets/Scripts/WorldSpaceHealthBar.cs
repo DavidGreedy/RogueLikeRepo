@@ -33,7 +33,7 @@ public class WorldSpaceHealthBar : MonoBehaviour
         m_health.OnDeath += Disable;
 
         UpdateValue(m_health.PercentHealth);
-        gameObject.name = m_health.name + this.name;
+        gameObject.name = m_health.name + "_HealthBar";
 
     }
 

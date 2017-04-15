@@ -1,8 +1,6 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
-public abstract class PooledBehaviour<T> : MonoBehaviour where T : MonoBehaviour
+public abstract class PooledBehaviour : MonoBehaviour
 {
 
 }
