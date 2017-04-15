@@ -6,7 +6,6 @@ public class HealthBehaviour : MonoBehaviour
     [SerializeField]
     private int m_maxHealth, m_currentHealth;
 
-
     public event Action<float> OnValueChange;
     public event Action OnDeath;
     public event Action OnHeal;

@@ -30,7 +30,16 @@ public class WorldSpaceHealthBar : MonoBehaviour
     public void Start()
     {
         m_health.OnValueChange += UpdateValue;
+        m_health.OnDeath += Disable;
+
         UpdateValue(m_health.PercentHealth);
+        gameObject.name = m_health.name + this.name;
+
+    }
+
+    public void Disable()
+    {
+        gameObject.SetActive(false);
     }
 
     public void Update()
