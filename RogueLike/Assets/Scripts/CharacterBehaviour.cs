@@ -14,18 +14,21 @@ public class CharacterBehaviour : MonoBehaviour
     protected HealthBehaviour m_health;
 
     [SerializeField]
-    protected WeaponBehaviour m_equippedWeapon;
-
-    [SerializeField]
     private ParticleSystem m_takeDamageEffect;
-
-    private bool isRooted;
 
     private Team m_team;
 
-    public WeaponBehaviour EquippedWeapon
+    [SerializeField]
+    private InventoryBehaviour m_inventory;
+
+    public WeaponBehaviour ActiveWeapon
     {
-        get { return m_equippedWeapon; }
+        get { return m_inventory.ActiveWeapon; }
+    }
+
+    public InventoryBehaviour Inventory
+    {
+        get { return m_inventory; }
     }
 
     public Vector3 Accelerate(Vector3 accelDir, Vector3 prevVelocity, float accelerate)
@@ -110,6 +113,4 @@ public class CharacterBehaviour : MonoBehaviour
         Debug.Log(string.Format("{0} has been killed", gameObject.name));
         Destroy(this.gameObject);
     }
-
-
 }

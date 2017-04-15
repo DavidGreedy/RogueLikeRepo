@@ -54,16 +54,16 @@ public class CharacterController : MonoBehaviour
 
         m_rigidbody.velocity = m_character.Move(moveDir, m_rigidbody.velocity, 10.0f, 50f);
 
-        if (m_character.EquippedWeapon)
+        if (m_character.ActiveWeapon)
         {
             m_crosshair.SetPosition(inputDirR.normalized);
         }
 
         if (GamePad.GetButtonDown(GamePad.Button.RightShoulder, m_gamepadIndex))
         {
-            if (m_character.EquippedWeapon)
+            if (m_character.ActiveWeapon)
             {
-                m_character.EquippedWeapon.UsePrimary();
+                m_character.ActiveWeapon.UsePrimary();
             }
         }
     }
