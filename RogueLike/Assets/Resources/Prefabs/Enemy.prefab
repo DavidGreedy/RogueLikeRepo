@@ -163,7 +163,7 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1849310786727878}
   m_LocalRotation: {x: -0, y: 1, z: -0, w: 0.0000029504295}
-  m_LocalPosition: {x: 0, y: 0.5, z: 10}
+  m_LocalPosition: {x: -4.297452, y: 0.5, z: -7.281976}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 4231193106644598}
@@ -317,8 +317,8 @@ MonoBehaviour:
   m_movementSpeed: 10
   m_maxMovementSpeed: 10
   m_health: {fileID: 114351674072621644}
-  m_equippedWeapon: {fileID: 114906651176635598}
-  m_takeDamageEffect: {fileID: 198639266501511296}
+  m_takeDamageEffect: {fileID: 19886758, guid: 8c27aeead6d968e4ba986702d6b84335, type: 2}
+  m_inventory: {fileID: 0}
 --- !u!114 &114351674072621644
 MonoBehaviour:
   m_ObjectHideFlags: 1
