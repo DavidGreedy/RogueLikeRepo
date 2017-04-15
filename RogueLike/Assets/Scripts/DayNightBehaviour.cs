@@ -29,6 +29,9 @@ public class DayNightBehaviour : MonoBehaviour
     [SerializeField]
     private string s;
 
+    [SerializeField]
+    private float f;
+
     void Start()
     {
         m_currentDay = 0;
@@ -45,7 +48,9 @@ public class DayNightBehaviour : MonoBehaviour
     {
         time += Time.deltaTime / m_dayLength;
         isDay = time < m_dayNight;
-        m_sunLight.transform.rotation = Quaternion.AngleAxis(isDay ? Mathf.Lerp(0, 180, time / m_dayNight) : Mathf.Lerp(180, 360, time / (1 - m_dayNight)), m_axis.normalized);
+
+        f = isDay ? time / m_dayNight : (time - m_dayNight) / (1.0f - m_dayNight);
+        m_sunLight.transform.rotation = Quaternion.AngleAxis(isDay ? Mathf.Lerp(0, 180, time / m_dayNight) : Mathf.Lerp(180, 360, (time - m_dayNight) / (1.0f - m_dayNight)), m_axis.normalized);
         if (time > 1.0f)
         {
             m_currentDay++;
