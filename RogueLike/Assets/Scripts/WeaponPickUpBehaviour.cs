@@ -9,11 +9,12 @@ public class WeaponPickUpBehaviour : MonoBehaviour
     {
         if (other.transform != null)
         {
-            CharacterBehaviour character = other.GetComponent<CharacterBehaviour>();
+            InventoryBehaviour targetInventory = other.GetComponent<InventoryBehaviour>();
 
-            if (character)
+            if (targetInventory)
             {
-                //character.ActiveWeapon = m_weapon;
+                targetInventory.SwapActiveWeapon(m_weapon);
+                gameObject.SetActive(false);
             }
         }
     }

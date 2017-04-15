@@ -9,12 +9,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c09a986ad37217e4fa72aea9a3711994, type: 3}
-  m_Name: RangedWeaponProperties
+  m_Name: M4
   m_EditorClassIdentifier: 
   muzzleVelocity: 100
   spread: 0
   maxAmmo: 100
   startingAmmo: 10
+  _weaponName: 0
   projectileOrigin: {x: 0, y: 0, z: 1.5}
   projectile: {fileID: 114157790065605108, guid: 86336a289a930c94f92cd879ed3f5373,
     type: 2}

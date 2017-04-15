@@ -20,7 +20,7 @@ public class InventoryBehaviour : MonoBehaviour
         OnWeaponSwap += LogWeaponSwap;
     }
 
-    private void Cycle(float delta)
+    public void Cycle(float delta)
     {
         if (delta == 0) { return; }
         m_activeIndex += delta > 0 ? 1 : -1;
@@ -35,18 +35,26 @@ public class InventoryBehaviour : MonoBehaviour
         }
     }
 
-    private void SwapActiveWeapon(WeaponBehaviour newWeapon)
+    public void SwapActiveWeapon(WeaponBehaviour newWeapon)
     {
-        WeaponBehaviour weaponToDrop = ActiveWeapon;
+        WeaponBehaviour oldWeapon = ActiveWeapon;
         m_weaponList[m_activeIndex] = newWeapon;
+
+        newWeapon.transform.parent = oldWeapon.transform.parent;
+        newWeapon.transform.position = oldWeapon.transform.position;
+        newWeapon.transform.rotation = oldWeapon.transform.rotation;
+        newWeapon.gameObject.SetActive(true);
+
+        oldWeapon.gameObject.SetActive(false);
+
         if (OnWeaponSwap != null)
         {
-            OnWeaponSwap.Invoke(weaponToDrop, newWeapon);
+            OnWeaponSwap.Invoke(oldWeapon, newWeapon);
         }
     }
 
     private void LogWeaponSwap(WeaponBehaviour oldWeapon, WeaponBehaviour newWeapon)
     {
-        Debug.Log(string.Format("{0} was swapped with {1}", oldWeapon.name, newWeapon.name));
+        Debug.Log(string.Format("{0} was swapped with {1}", oldWeapon ? oldWeapon.name : "NOTHING", newWeapon.name));
     }
 }
