@@ -94,6 +94,7 @@ public class FastCollision : MonoBehaviour
             if (hitObject && OnHit != null)
             {
                 OnHit.Invoke(hit, hitObject);
+                gameObject.SetActive(false);
             }
 
             float angle = Vector3.Angle(-direction, hit.normal);
