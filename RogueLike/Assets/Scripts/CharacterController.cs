@@ -59,7 +59,7 @@ public class CharacterController : MonoBehaviour
             m_crosshair.SetPosition(inputDirR.normalized);
         }
 
-        if (GamePad.GetButtonDown(GamePad.Button.RightShoulder, m_gamepadIndex))
+        if (GamePad.GetButton(GamePad.Button.RightShoulder, m_gamepadIndex))
         {
             if (m_character.ActiveWeapon)
             {

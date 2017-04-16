@@ -12,6 +12,9 @@ public class RangedWeaponBehaviour : WeaponBehaviour
     [SerializeField]
     private LayerMask m_raycastLayer;
 
+    [SerializeField]
+    private FireMode m_fireMode;
+
     public Vector3 WorldOrigin
     {
         get { return transform.position + transform.TransformDirection(m_weaponProperties.projectileOrigin); }
@@ -25,7 +28,7 @@ public class RangedWeaponBehaviour : WeaponBehaviour
 
     public override void UsePrimary()
     {
-        if (m_currentAmmo > 0)
+        if (m_currentAmmo > 0 && m_fireMode.IsReady)
         {
             ProjectileBehaviour p = PoolManager.Instance.Next<ProjectileBehaviour>();
             if (p == null)
@@ -35,6 +38,7 @@ public class RangedWeaponBehaviour : WeaponBehaviour
             p.Launch(transform.position + transform.TransformDirection(m_weaponProperties.projectileOrigin), transform.forward * m_weaponProperties.muzzleVelocity);
             m_currentAmmo--;
             base.UsePrimary();
+            StartCoroutine(m_fireMode.CooldownRoutine(0.015f));
         }
     }
 
