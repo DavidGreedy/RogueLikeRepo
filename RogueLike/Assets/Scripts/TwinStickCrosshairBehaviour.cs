@@ -7,8 +7,8 @@ public class TwinStickCrosshairBehaviour : MonoBehaviour
 {
     public enum CrosshairType
     {
-        NORMALIZED,
-        UNCLAMPED
+        FREE,
+        NORMALIZED
     }
 
     [SerializeField]
@@ -34,6 +34,15 @@ public class TwinStickCrosshairBehaviour : MonoBehaviour
 
         switch (m_type)
         {
+            case CrosshairType.FREE:
+                {
+                    Vector3 worldPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+                    Vector2 screenPos = RectTransformUtility.WorldToScreenPoint(Camera.main, worldPosition);
+                    Vector2 position = (screenPos - m_canvasRect.sizeDelta / 2f);
+
+                    m_crosshairRect.anchoredPosition = new Vector2(Mathf.Clamp(position.x, 0 - Screen.width / 2f, Screen.width / 2f), Mathf.Clamp(position.y, 0 - Screen.height / 2f, Screen.height / 2f));
+                    break;
+                }
             case CrosshairType.NORMALIZED:
                 {
                     RaycastHit hit = m_weapon.ForwardRaycastHit(m_length);
