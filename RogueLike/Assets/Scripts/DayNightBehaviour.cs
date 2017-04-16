@@ -32,6 +32,9 @@ public class DayNightBehaviour : MonoBehaviour
     [SerializeField]
     private float f;
 
+    [SerializeField]
+    private bool timeFlow;
+
     void Start()
     {
         m_currentDay = 0;
@@ -46,6 +49,8 @@ public class DayNightBehaviour : MonoBehaviour
 
     void Update()
     {
+        if (!timeFlow) { return; }
+
         time += Time.deltaTime / m_dayLength;
         isDay = time < m_dayNight;
 
