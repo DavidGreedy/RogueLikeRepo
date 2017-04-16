@@ -39,10 +39,10 @@ public class DayNightBehaviour : MonoBehaviour
         isDay = true;
     }
 
-    private string GetTimeOfDay()
+    public string GetTimeOfDay()
     {
         TimeSpan t = TimeSpan.FromSeconds(time * 60f * 60f * 24f);
-        return string.Format("{0:D2}h:{1:D2}m:{2:D2}s", t.Hours, t.Minutes, t.Seconds);
+        return string.Format("{0:D2}:{1:D2}", t.Hours, t.Minutes);
     }
 
     void Update()
