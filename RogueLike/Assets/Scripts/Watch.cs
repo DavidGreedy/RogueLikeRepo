@@ -6,9 +6,12 @@ using UnityEngine.UI;
 public class Watch : MonoBehaviour {
 
     public DayNightBehaviour dayNight;
+    public HealthBehaviour health;
     [SerializeField]
     private bool watchActive;
     private Animator anim;
+
+    public Image healthImage, thirstImage, hungerImage;
 
     public Text time;
 
@@ -34,7 +37,8 @@ public class Watch : MonoBehaviour {
                 anim.SetBool("Active", false);
             }
         }
-
         time.text = dayNight.GetTimeOfDay();
+        healthImage.fillAmount = health.PercentHealth;
+
 	}
 }
