@@ -5,9 +5,9 @@ using UnityEngine;
 
 public class DayNightBehaviour : MonoBehaviour
 {
-    public Light m_sunLight;
+    public GameObject m_sunLight;
 
-    public float m_dayLength; // Time in seconds
+    public float m_dayCycle; // Time in seconds
 
     public int m_currentDay;
 
@@ -15,6 +15,7 @@ public class DayNightBehaviour : MonoBehaviour
 
     private float m_daySpeed;
 
+    [SerializeField]
     private float startTime;
 
     [SerializeField, Range(0f, 1f)]
@@ -27,10 +28,10 @@ public class DayNightBehaviour : MonoBehaviour
     private bool isDay;
 
     [SerializeField]
-    private string s;
+    private string timeString;
 
     [SerializeField]
-    private float f;
+    private float timeFloat;
 
     void Start()
     {
@@ -46,16 +47,16 @@ public class DayNightBehaviour : MonoBehaviour
 
     void Update()
     {
-        time += Time.deltaTime / m_dayLength;
+        time += Time.deltaTime / m_dayCycle;
         isDay = time < m_dayNight;
 
-        f = isDay ? time / m_dayNight : (time - m_dayNight) / (1.0f - m_dayNight);
+        timeFloat = isDay ? time / m_dayNight : (time - m_dayNight) / (1.0f - m_dayNight);
         m_sunLight.transform.rotation = Quaternion.AngleAxis(isDay ? Mathf.Lerp(0, 180, time / m_dayNight) : Mathf.Lerp(180, 360, (time - m_dayNight) / (1.0f - m_dayNight)), m_axis.normalized);
         if (time > 1.0f)
         {
             m_currentDay++;
             time = 0;
         }
-        s = GetTimeOfDay();
+        timeString = GetTimeOfDay();
     }
 }
