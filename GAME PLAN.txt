@@ -1,0 +1,44 @@
+
+
+NUCLEAR CLONE
+
+Rogue like, with guns and procedural levels (binding of isaac style)
+
+The objective of the game is to find the key to unlock the next level.
+
+Game is Isometric 3D but behaves just like a 2D game.
+
+
+
+WEAPONS
+
+Come up with a list of unique feeling weapons
+
+ENEMIES
+
+^^
+
+STILL TO DECIDE:
+
+BOSSES?
+COLLECTABLE/CURRENCY?
+SHOP?
+
+SIDE MISSIONS?
+
+HUD:
+
+Simple and clear.
+Player health
+Kills?
+Current Gun
+Ammo count
+
+MAYBE HAVE 2 GUNS THAT CAN BE SWAPPED
+
+
+GAME MECHANICS
+Hotline miami style thow weapon to unequip.
+
+
+
