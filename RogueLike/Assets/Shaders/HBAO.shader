@@ -1,4 +1,6 @@
-﻿Shader "Tutorial/Display Normals"
+﻿// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
+
+Shader "Tutorial/Display Normals"
 {
 	Properties
 	{
@@ -22,7 +24,7 @@
 				VertexIn vert(appdata_base v)
 				{
 					VertexIn o;
-					o.Position = mul(UNITY_MATRIX_MVP, v.vertex);
+					o.Position = UnityObjectToClipPos(v.vertex);
 					o.UV = float4(v.texcoord.xy, 0, 0);
 					return o;
 				}
