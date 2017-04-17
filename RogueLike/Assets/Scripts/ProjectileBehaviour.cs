@@ -1,7 +1,5 @@
-﻿using UnityEditor;
-using UnityEngine;
+﻿using UnityEngine;
 
-[InitializeOnLoad]
 public class ProjectileBehaviour : MonoBehaviour
 {
     [SerializeField]
