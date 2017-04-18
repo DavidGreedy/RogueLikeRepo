@@ -135,7 +135,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0e804db6a8c33234babdd75a3b206d6e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  numRooms: 50
+  numRooms: 100
   targetWidth: 10
   targetHeight: 10
   isDone: 0

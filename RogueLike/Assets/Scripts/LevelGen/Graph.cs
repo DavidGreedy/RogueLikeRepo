@@ -1,26 +1,10 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Linq;
 
 [System.Serializable]
 public class Graph<T>
 {
     private List<Node<T>> nodes;
-
-    public List<Pair<Node<T>, Node<T>>> Connections()
-    {
-        List<Pair<Node<T>, Node<T>>> connections = new List<Pair<Node<T>, Node<T>>>();
-
-        for (int i = 0; i < nodes.Count; i++)
-        {
-            List<Node<T>> nodeConnections = nodes[i].Connections;
-
-            for (int j = 0; j < nodeConnections.Count; j++)
-            {
-                connections.Add(new Pair<Node<T>, Node<T>>(nodes[i], nodeConnections[j]));
-            }
-        }
-        return connections;
-    }
 
     public List<Node<T>> Nodes()
     {
@@ -40,30 +24,86 @@ public class Graph<T>
     }
 }
 
+public class Tree<T>
+{
+    private Node<T> rootNode;
+
+    public Tree(Node<T> rootNode)
+    {
+        this.rootNode = rootNode;
+    }
+
+    public List<Node<T>> GetAll()
+    {
+        List<Node<T>> children = new List<Node<T>>();
+        rootNode.AllChildren(ref children);
+        return children;
+    }
+}
+
 [System.Serializable]
 public class Node<T>
 {
     private T data;
-    private List<Node<T>> connections;
+    private Node<T> parent;
+    private List<Node<T>> children;
 
-    public List<Node<T>> Connections { get { return connections; } }
-
-    public T Data { get { return data; } }
-
-    public Node(T data)
+    public T Data
     {
-        this.data = data;
-        connections = new List<Node<T>>();
+        get { return data; }
     }
 
-    public void Connect(Node<T> other)
+    public Node<T> Parent
     {
-        if (!connections.Contains(other))
+        get { return parent; }
+        private set { parent = value; }
+    }
+
+    public List<Node<T>> Children
+    {
+        get { return children; }
+    }
+
+    public void AllChildren(ref List<Node<T>> allChildren)
+    {
+        allChildren.AddRange(children);
+        if (children != null)
         {
-            connections.Add(other);
+            foreach (Node<T> child in children)
+            {
+                child.AllChildren(ref allChildren);
+            }
         }
     }
+
+    public Node(T data, Node<T> parent)
+    {
+        this.data = data;
+        this.parent = parent;
+
+
+        if (parent != null)
+        {
+            parent.AddChild(this);
+        }
+    }
+
+    public Node<T> Root()
+    {
+        return parent != null ? parent.Root() : this;
+    }
+
+    public void AddChild(Node<T> child)
+    {
+        if (children == null)
+        {
+            this.children = new List<Node<T>>();
+        }
+        children.Add(child);
+    }
 }
+
+
 
 public class Pair<T1, T2>
 {
