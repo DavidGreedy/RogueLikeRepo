@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using TriangleNet.Data;
 using TriangleNet.Geometry;
 using UnityEngine;
+using UnityEngine.Experimental.Rendering;
 using Random = UnityEngine.Random;
 
 public class LevelGenerator : MonoBehaviour
@@ -12,7 +14,7 @@ public class LevelGenerator : MonoBehaviour
 
     private TriangleNet.Mesh meshRepresentation;
 
-    private List<Edge2D> spanningTree;
+    private Graph.Edge[] spanningTree;
 
     private List<Edge> edges;
 
@@ -176,9 +178,14 @@ public class LevelGenerator : MonoBehaviour
 
         if (spanningTree != null)
         {
-            for (int i = 0; i < spanningTree.Count; i++)
+            List<Vertex> vs = meshRepresentation.Vertices.ToList();
+
+            for (int i = 0; i < spanningTree.Length; i++)
             {
-                Gizmos.DrawLine(spanningTree[i][0], spanningTree[i][1]);
+                Vertex v0 = vs[spanningTree[i].src];
+                Vertex v1 = vs[spanningTree[i].dest];
+
+                Gizmos.DrawLine(new Vector2(v0.x, v0.y), new Vector2(v1.x, v1.y));
             }
         }
     }
@@ -276,6 +283,159 @@ public class LevelGenerator : MonoBehaviour
     //    }
     //}
 
+    class Graph
+    {
+        // A class to represent a graph edge
+        public class Edge : IComparable<Edge>
+        {
+            public int src, dest;
+            public float weight;
+
+            // Comparator function used for sorting edges based on
+            // their weight
+            public Edge()
+            {
+            }
+
+            public Edge(int src, int dest, float weight)
+            {
+                this.src = src;
+                this.dest = dest;
+                this.weight = weight;
+            }
+
+            public int CompareTo(Edge compareEdge)
+            {
+                if (this.weight > compareEdge.weight)
+                {
+                    return 1;
+                }
+                else if (this.weight < compareEdge.weight)
+                {
+                    return -1;
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+        };
+
+        // A class to represent a subset for union-find
+        class Subset
+        {
+            public int parent, rank;
+        };
+
+        int V, E; // V-> no. of vertices & E->no.of edges
+        Edge[] edge; // collection of all edges
+
+        // Creates a graph with V vertices and E edges
+        public Graph(List<int> vs, List<Edge> es)
+        {
+            V = vs.Count;
+            E = es.Count;
+            edge = es.ToArray();
+        }
+
+        // A utility function to find set of an element i
+        // (uses path compression technique)
+        int find(Subset[] subsets, int i)
+        {
+            // find root and make root as parent of i (path compression)
+            if (subsets[i].parent != i)
+                subsets[i].parent = find(subsets, subsets[i].parent);
+
+            return subsets[i].parent;
+        }
+
+        // A function that does union of two sets of x and y
+        // (uses union by rank)
+        void Union(Subset[] subsets, int x, int y)
+        {
+            int xroot = find(subsets, x);
+            int yroot = find(subsets, y);
+
+            // Attach smaller rank tree under root of high rank tree
+            // (Union by Rank)
+            if (subsets[xroot].rank < subsets[yroot].rank)
+                subsets[xroot].parent = yroot;
+            else if (subsets[xroot].rank > subsets[yroot].rank)
+                subsets[yroot].parent = xroot;
+
+            // If ranks are same, then make one as root and increment
+            // its rank by one
+            else
+            {
+                subsets[yroot].parent = xroot;
+                subsets[xroot].rank++;
+            }
+        }
+
+        public Edge[] KruskalMST()
+        {
+            Edge[] result = new Edge[V]; // Tnis will store the resultant MST
+            int e = 0; // An index variable, used for result[]
+            int i = 0; // An index variable, used for sorted edges
+
+            for (i = 0; i < V; ++i)
+            {
+                result[i] = new Edge();
+            }
+
+            // Step 1:  Sort all the edges in non-decreasing order of their
+            // weight.  If we are not allowed to change the given graph, we
+            // can create a copy of array of edges
+            Array.Sort(edge);
+
+            // Allocate memory for creating V ssubsets
+            Subset[] subsets = new Subset[V];
+            for (i = 0; i < V; ++i)
+            {
+                subsets[i] = new Subset();
+            }
+
+            // Create V subsets with single elements
+            for (int v = 0; v < V; ++v)
+            {
+                subsets[v].parent = v;
+                subsets[v].rank = 0;
+            }
+
+            i = 0; // Index used to pick next edge
+
+            // Number of edges to be taken is equal to V-1
+            while (e < V - 1)
+            {
+                // Step 2: Pick the smallest edge. And increment the index
+                // for next iteration
+                Edge next_edge = new Edge();
+                next_edge = edge[i++];
+
+                int x = find(subsets, next_edge.src);
+                int y = find(subsets, next_edge.dest);
+
+                // If including this edge does't cause cycle, include it
+                // in result and increment the index of result for next edge
+                if (x != y)
+                {
+                    result[e++] = next_edge;
+                    Union(subsets, x, y);
+                }
+                // Else discard the next_edge
+            }
+
+            return result;
+
+            // print the contents of result[] to display the built MST
+            print("Following are the edges in the constructed MST");
+            for (i = 0; i < e; ++i)
+            {
+                print(result[i].src + " -- " + result[i].dest + " == " + result[i].weight);
+            }
+        }
+    }
+
     public void Delaunay(List<Room> rooms)
     {
         meshRepresentation = new TriangleNet.Mesh();
@@ -288,66 +448,64 @@ public class LevelGenerator : MonoBehaviour
 
         meshRepresentation.Triangulate(geometry);
 
-        List<Edge2D> edges = new List<Edge2D>();
+        List<Vertex> verticesRaw = meshRepresentation.Vertices.ToList();
+        List<int> verticesInt = new List<int>();
 
-        foreach (KeyValuePair<int, TriangleNet.Data.Triangle> pair in meshRepresentation.triangles)
+        print(verticesRaw.Count);
+
+        for (int i = 0; i < verticesRaw.Count; i++)
         {
-            TriangleNet.Data.Triangle triangle = pair.Value;
+            verticesInt.Add(verticesRaw[i].ID);
+        }
 
-            TriangleNet.Data.Vertex vertex0 = triangle.GetVertex(0);
-            TriangleNet.Data.Vertex vertex1 = triangle.GetVertex(1);
-            TriangleNet.Data.Vertex vertex2 = triangle.GetVertex(2);
+        List<Edge> edgesRaw = meshRepresentation.Edges.ToList();
+        List<Graph.Edge> edgesInt = new List<Graph.Edge>();
 
-            edges.Add(new Edge2D(new Vector2(vertex0.x, vertex0.y), new Vector2(vertex1.x, vertex1.y)));
-            edges.Add(new Edge2D(new Vector2(vertex1.x, vertex1.y), new Vector2(vertex2.x, vertex2.y)));
-            edges.Add(new Edge2D(new Vector2(vertex2.x, vertex2.y), new Vector2(vertex0.x, vertex0.y)));
+        print(edgesRaw.Count);
+
+        for (int i = 0; i < edgesRaw.Count; i++)
+        {
+            edgesInt.Add(new Graph.Edge(edgesRaw[i].P0, edgesRaw[i].P1, Vector2.Distance(new Vector2(verticesRaw[edgesRaw[i].P0].x, verticesRaw[edgesRaw[i].P0].y), new Vector2(verticesRaw[edgesRaw[i].P1].x, verticesRaw[edgesRaw[i].P1].y))));
         }
 
 
-        List<Pair<Edge2D, float>> edgeWeights = new List<Pair<Edge2D, float>>();
+        Graph graph = new Graph(verticesInt, edgesInt);
 
-        foreach (Edge2D edge in edges)
-        {
-            edgeWeights.Add(new Pair<Edge2D, float>(edge, edge.Length));
-        }
-
-        spanningTree = MinimumSpanningTree(edgeWeights);
+        spanningTree = graph.KruskalMST();
+        //spanningTree = MinimumSpanningTree(edgeWeights);
     }
 
-    private List<Edge2D> MinimumSpanningTree(List<Pair<Edge2D, float>> edges)
-    {
+    //private List<Edge2D> MinimumSpanningTree(List<Vertex> vertices, List<Edge> edges)
+    //{
+    //List<Edge2D> tree = new List<Edge2D>();
 
-        List<Edge2D> tree = new List<Edge2D>();
+    //List<Vector2> vertices = new List<Vector2>();
 
-        List<Vector2> vertices = new List<Vector2>();
+    //edges.Sort((x, y) => x.Second.CompareTo(y.Second));
 
-        edges.Sort((x, y) => x.Second.CompareTo(y.Second));
+    //for (int i = 0; i < edges.Count; i++)
+    //{
+    //    vertices.Add(edges[i].First[0]);
+    //    vertices.Add(edges[i].First[1]);
+    //}
 
-        for (int i = 0; i < edges.Count; i++)
-        {
-            vertices.Add(edges[i].First[0]);
-            vertices.Add(edges[i].First[1]);
-        }
+    //vertices = vertices.Distinct().ToList();
 
-        vertices = vertices.Distinct().ToList();
+    //print(vertices.Count);
 
-        //tree.Add(new Node<Vector2>(vertices[0], null));
+    //for (int i = 0; i < edges.Count; i++)
+    //{
+    //    if (vertices.Contains(edges[i].First[0]) || vertices.Contains(edges[i].First[1]))
+    //    {
+    //        tree.Add(edges[i].First);
+    //        vertices.Remove(edges[i].First[0]);
+    //        vertices.Remove(edges[i].First[1]);
+    //    }
+    //}
 
-        print(vertices.Count);
+    //print(tree.Count);
 
-        for (int i = 0; i < vertices.Count; i++)
-        {
-            if (vertices.Contains(edges[i].First[0]) || vertices.Contains(edges[i].First[1]))
-            {
-                tree.Add(edges[i].First);
-                vertices.Remove(edges[i].First[0]);
-                vertices.Remove(edges[i].First[1]);
-            }
-        }
-
-        print(tree.Count);
-        return tree;
-    }
+    //}
 }
 
 public class Room : MonoBehaviour
