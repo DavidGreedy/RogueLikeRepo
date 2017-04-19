@@ -155,27 +155,6 @@ public class LevelGenerator : MonoBehaviour
                 DrawRect(Room.Rect, Color.red);
             }
         }
-        //if (meshRepresentation != null)
-        //{
-        //    Gizmos.color = Color.blue;
-        //    foreach (KeyValuePair<int, TriangleNet.Data.Triangle> pair in meshRepresentation.triangles)
-        //    {
-        //        TriangleNet.Data.Triangle triangle = pair.Value;
-
-        //        TriangleNet.Data.Vertex vertex0 = triangle.GetVertex(0);
-        //        TriangleNet.Data.Vertex vertex1 = triangle.GetVertex(1);
-        //        TriangleNet.Data.Vertex vertex2 = triangle.GetVertex(2);
-
-        //        Vector2 p0 = new Vector2((float)vertex0.x, (float)vertex0.y);
-        //        Vector2 p1 = new Vector2((float)vertex1.x, (float)vertex1.y);
-        //        Vector2 p2 = new Vector2((float)vertex2.x, (float)vertex2.y);
-
-        //        Gizmos.DrawLine(p0, p1);
-        //        Gizmos.DrawLine(p1, p2);
-        //        Gizmos.DrawLine(p2, p0);
-        //    }
-        //}
-
         if (connectedRooms != null)
         {
             for (int i = 0; i < connectedRooms.Count; i++)
@@ -184,18 +163,6 @@ public class LevelGenerator : MonoBehaviour
 
             }
         }
-        //if (spanningTree != null)
-        //{
-        //    List<Vertex> vs = meshRepresentation.Vertices.ToList();
-
-        //    for (int i = 0; i < spanningTree.Length; i++)
-        //    {
-        //        Vertex v0 = vs[spanningTree[i].src];
-        //        Vertex v1 = vs[spanningTree[i].dest];
-
-        //        Gizmos.DrawLine(new Vector2(v0.x, v0.y), new Vector2(v1.x, v1.y));
-        //    }
-        //}
     }
 
     public static int Round(float n, int m)
@@ -211,48 +178,6 @@ public class LevelGenerator : MonoBehaviour
         Gizmos.DrawLine(new Vector2(rect.xMax, rect.yMin), new Vector2(rect.xMin, rect.yMin));
         Gizmos.DrawLine(new Vector2(rect.xMin, rect.yMin), new Vector2(rect.xMin, rect.yMax));
     }
-
-    //public Vector2 COG(List<Room> rooms)
-    //{
-    //    Vector2 sum = new Vector2();
-    //    for (int i = 0; i < rooms.Count; i++)
-    //    {
-    //        sum += rooms[i].Position;
-    //    }
-
-    //    return sum / rooms.Count;
-    //}
-
-    //public struct Triangle2D
-    //{
-    //    private Vector2[] points;
-
-    //    public Triangle2D(Vector2 r0, Vector2 p1, Vector2 p2)
-    //    {
-    //        points = new Vector2[3];
-    //        points[0] = r0;
-    //        points[1] = p1;
-    //        points[2] = p2;
-    //    }
-
-    //    public Vector2[] Positions()
-    //    {
-    //        return new Vector2[] { points[0], points[1], points[2] };
-    //    }
-
-    //    public float Area()
-    //    {
-    //        Vector2 v0 = points[1] - points[0];
-    //        Vector2 v1 = points[2] - points[0];
-    //        return (v0.x * v1.y - v0.y * v1.x);
-    //    }
-
-    //    public Vector2 this[int index]
-    //    {
-    //        get { return points[index]; }
-    //        set { points[index] = value; }
-    //    }
-    //}
 
     public struct Edge2D
     {
@@ -432,95 +357,104 @@ public class LevelGenerator : MonoBehaviour
         }
     }
 
+    public void Shuffle<T>(IList<T> array)
+    {
+        System.Random rand = new System.Random();
+
+        for (int n = array.Count; n > 1;)
+        {
+            int k = rand.Next(n);
+            --n;
+            T temp = array[n];
+            array[n] = array[k];
+            array[k] = temp;
+        }
+    }
+
     public void Delaunay(List<Room> rooms)
     {
         meshRepresentation = new TriangleNet.Mesh();
 
         InputGeometry geometry = new InputGeometry();
 
-        Dictionary<Pair<int, int>, Room> roomDict = new Dictionary<Pair<int, int>, Room>();
+        Dictionary<Vertex, Room> roomDict = new Dictionary<Vertex, Room>();
 
         foreach (Room room in rooms)
         {
-            geometry.AddPoint(room.Position.x, room.Position.y);
-            roomDict.Add(new Pair<int, int>((int)room.Position.x, (int)room.Position.y), room);
+            Vertex point = new Vertex(room.Position.x, room.Position.y);
+            roomDict.Add(point, room);
         }
+
+        geometry.points = roomDict.Keys.ToList();
 
         meshRepresentation.Triangulate(geometry);
 
-        List<Vertex> verticesRaw = meshRepresentation.Vertices.ToList();
-        List<int> verticesInt = new List<int>();
-
-        print(verticesRaw.Count);
-
-        for (int i = 0; i < verticesRaw.Count; i++)
-        {
-            verticesInt.Add(verticesRaw[i].ID);
-        }
-
         List<Edge> edgesRaw = meshRepresentation.Edges.ToList();
-        List<Graph.Edge> edgesInt = new List<Graph.Edge>();
+        List<Graph.Edge> edgeWeights = new List<Graph.Edge>();
 
-        print(edgesRaw.Count);
-
-        for (int i = 0; i < edgesRaw.Count; i++)
+        foreach (Edge edge in edgesRaw)
         {
-            edgesInt.Add(new Graph.Edge(edgesRaw[i].P0, edgesRaw[i].P1, Vector2.Distance(new Vector2(verticesRaw[edgesRaw[i].P0].x, verticesRaw[edgesRaw[i].P0].y), new Vector2(verticesRaw[edgesRaw[i].P1].x, verticesRaw[edgesRaw[i].P1].y))));
+            Vertex v0, v1;
+            meshRepresentation.vertices.TryGetValue(edge.P0, out v0);
+            meshRepresentation.vertices.TryGetValue(edge.P1, out v1);
+
+            if (v0 == null || v1 == null)
+                Debug.LogError("Vertex was null");
+            else
+                edgeWeights.Add(new Graph.Edge(v0.ID, v1.ID, Vector2.Distance(new Vector2(v0.x, v0.y), new Vector2(v1.x, v1.y))));
         }
 
-        Graph graph = new Graph(verticesInt, edgesInt);
+        Graph graph = new Graph(meshRepresentation.vertices.Keys.ToList(), edgeWeights);
 
         spanningTree = graph.KruskalMST();
 
         connectedRooms = new List<Pair<Room, Room>>();
 
-        for (int i = 0; i < spanningTree.Length; i++)
+        foreach (Graph.Edge edge in spanningTree)
         {
-            Room room0;
-            Room room1;
+            Vertex v0, v1;
+            meshRepresentation.vertices.TryGetValue(edge.src, out v0);
+            meshRepresentation.vertices.TryGetValue(edge.dest, out v1);
 
-            roomDict.TryGetValue(new Pair<int, int>((int)verticesRaw[spanningTree[i].src].x, (int)verticesRaw[spanningTree[i].src].y), out room0);
-            roomDict.TryGetValue(new Pair<int, int>((int)verticesRaw[spanningTree[i].dest].x, (int)verticesRaw[spanningTree[i].dest].y), out room1);
+            if (m_rooms != null && v0 != null && v1 != null)
+            {
+                Room r0 = m_rooms.First(x => Math.Abs(x.Position.x - v0.x) < 0.01f && Math.Abs(x.Position.y - v0.y) < 0.01f);
+                Room r1 = m_rooms.First(x => Math.Abs(x.Position.x - v1.x) < 0.01f && Math.Abs(x.Position.y - v1.y) < 0.01f);
 
-            connectedRooms.Add(new Pair<Room, Room>(room0, room1));
+                connectedRooms.Add(new Pair<Room, Room>(r0, r1));
+            }
+        }
+
+        int edgesToAdd = 3;
+        int edgesAdded = 0;
+
+        float threshHoldWeight = 25f;
+
+        List<Graph.Edge> possibleEdges = edgeWeights.Where(x => !spanningTree.Contains(x) && x.weight < threshHoldWeight).ToList();
+
+        Shuffle(possibleEdges);
+
+        possibleEdges.Take(edgesToAdd);
+
+        foreach (Graph.Edge edge in possibleEdges)
+        {
+            Vertex v0, v1;
+            meshRepresentation.vertices.TryGetValue(edge.src, out v0);
+            meshRepresentation.vertices.TryGetValue(edge.dest, out v1);
+
+            if (m_rooms != null && v0 != null && v1 != null)
+            {
+                Room r0 = m_rooms.First(x => Math.Abs(x.Position.x - v0.x) < 0.01f && Math.Abs(x.Position.y - v0.y) < 0.01f);
+                Room r1 = m_rooms.First(x => Math.Abs(x.Position.x - v1.x) < 0.01f && Math.Abs(x.Position.y - v1.y) < 0.01f);
+
+                connectedRooms.Add(new Pair<Room, Room>(r0, r1));
+            }
         }
 
 
-        print(connectedRooms.Count);
-        //spanningTree = MinimumSpanningTree(edgeWeights);
+        print("Total edges: " + edgeWeights.Count + " Possible edges: " + possibleEdges.Count);
+        print(connectedRooms.Count + " Connected");
     }
-
-    //private List<Edge2D> MinimumSpanningTree(List<Vertex> vertices, List<Edge> edges)
-    //{
-    //List<Edge2D> tree = new List<Edge2D>();
-
-    //List<Vector2> vertices = new List<Vector2>();
-
-    //edges.Sort((x, y) => x.Second.CompareTo(y.Second));
-
-    //for (int i = 0; i < edges.Count; i++)
-    //{
-    //    vertices.Add(edges[i].First[0]);
-    //    vertices.Add(edges[i].First[1]);
-    //}
-
-    //vertices = vertices.Distinct().ToList();
-
-    //print(vertices.Count);
-
-    //for (int i = 0; i < edges.Count; i++)
-    //{
-    //    if (vertices.Contains(edges[i].First[0]) || vertices.Contains(edges[i].First[1]))
-    //    {
-    //        tree.Add(edges[i].First);
-    //        vertices.Remove(edges[i].First[0]);
-    //        vertices.Remove(edges[i].First[1]);
-    //    }
-    //}
-
-    //print(tree.Count);
-
-    //}
 }
 
 public class Room
