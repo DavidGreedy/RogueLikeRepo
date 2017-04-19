@@ -4,7 +4,6 @@ using System.Linq;
 using TriangleNet.Data;
 using TriangleNet.Geometry;
 using UnityEngine;
-using UnityEngine.Experimental.Rendering;
 using Random = UnityEngine.Random;
 
 public class LevelGenerator : MonoBehaviour
@@ -15,6 +14,7 @@ public class LevelGenerator : MonoBehaviour
     private TriangleNet.Mesh meshRepresentation;
 
     private Graph.Edge[] spanningTree;
+    private List<Pair<Room, Room>> connectedRooms;
 
     private List<Edge> edges;
 
@@ -176,18 +176,26 @@ public class LevelGenerator : MonoBehaviour
         //    }
         //}
 
-        if (spanningTree != null)
+        if (connectedRooms != null)
         {
-            List<Vertex> vs = meshRepresentation.Vertices.ToList();
-
-            for (int i = 0; i < spanningTree.Length; i++)
+            for (int i = 0; i < connectedRooms.Count; i++)
             {
-                Vertex v0 = vs[spanningTree[i].src];
-                Vertex v1 = vs[spanningTree[i].dest];
+                Gizmos.DrawLine(connectedRooms[i].First.Position, connectedRooms[i].Second.Position);
 
-                Gizmos.DrawLine(new Vector2(v0.x, v0.y), new Vector2(v1.x, v1.y));
             }
         }
+        //if (spanningTree != null)
+        //{
+        //    List<Vertex> vs = meshRepresentation.Vertices.ToList();
+
+        //    for (int i = 0; i < spanningTree.Length; i++)
+        //    {
+        //        Vertex v0 = vs[spanningTree[i].src];
+        //        Vertex v1 = vs[spanningTree[i].dest];
+
+        //        Gizmos.DrawLine(new Vector2(v0.x, v0.y), new Vector2(v1.x, v1.y));
+        //    }
+        //}
     }
 
     public static int Round(float n, int m)
@@ -270,18 +278,6 @@ public class LevelGenerator : MonoBehaviour
         private List<Edge2D> edges;
 
     }
-
-    //void MakeCounterClockwise(ref Triangle2D tri, float EPS)
-    //{
-    //    float area = tri.Area();
-    //    if (area < -EPS)
-    //    {
-    //        Vector2 ip1 = tri[1];
-    //        Vector2 ip2 = tri[2];
-    //        tri[1] = ip2;
-    //        tri[2] = ip1;
-    //    }
-    //}
 
     class Graph
     {
@@ -441,9 +437,13 @@ public class LevelGenerator : MonoBehaviour
         meshRepresentation = new TriangleNet.Mesh();
 
         InputGeometry geometry = new InputGeometry();
+
+        Dictionary<Pair<int, int>, Room> roomDict = new Dictionary<Pair<int, int>, Room>();
+
         foreach (Room room in rooms)
         {
             geometry.AddPoint(room.Position.x, room.Position.y);
+            roomDict.Add(new Pair<int, int>((int)room.Position.x, (int)room.Position.y), room);
         }
 
         meshRepresentation.Triangulate(geometry);
@@ -468,10 +468,25 @@ public class LevelGenerator : MonoBehaviour
             edgesInt.Add(new Graph.Edge(edgesRaw[i].P0, edgesRaw[i].P1, Vector2.Distance(new Vector2(verticesRaw[edgesRaw[i].P0].x, verticesRaw[edgesRaw[i].P0].y), new Vector2(verticesRaw[edgesRaw[i].P1].x, verticesRaw[edgesRaw[i].P1].y))));
         }
 
-
         Graph graph = new Graph(verticesInt, edgesInt);
 
         spanningTree = graph.KruskalMST();
+
+        connectedRooms = new List<Pair<Room, Room>>();
+
+        for (int i = 0; i < spanningTree.Length; i++)
+        {
+            Room room0;
+            Room room1;
+
+            roomDict.TryGetValue(new Pair<int, int>((int)verticesRaw[spanningTree[i].src].x, (int)verticesRaw[spanningTree[i].src].y), out room0);
+            roomDict.TryGetValue(new Pair<int, int>((int)verticesRaw[spanningTree[i].dest].x, (int)verticesRaw[spanningTree[i].dest].y), out room1);
+
+            connectedRooms.Add(new Pair<Room, Room>(room0, room1));
+        }
+
+
+        print(connectedRooms.Count);
         //spanningTree = MinimumSpanningTree(edgeWeights);
     }
 
@@ -508,8 +523,9 @@ public class LevelGenerator : MonoBehaviour
     //}
 }
 
-public class Room : MonoBehaviour
+public class Room
 {
+    private GameObject gameObject;
     private BoxCollider2D collider;
     public Rigidbody2D rigidbody;
     private Rect rect;
@@ -526,15 +542,15 @@ public class Room : MonoBehaviour
 
     public void Init(Transform parent, Vector3 position, Vector2 size)
     {
-        GameObject g = new GameObject();
-        g.transform.position = position;
-        g.transform.parent = parent;
+        gameObject = new GameObject();
+        gameObject.transform.position = position;
+        gameObject.transform.parent = parent;
 
-        g.name = size.ToString();
-        collider = g.AddComponent<BoxCollider2D>();
+        gameObject.name = size.ToString();
+        collider = gameObject.AddComponent<BoxCollider2D>();
         collider.size = size;
 
-        rigidbody = g.AddComponent<Rigidbody2D>();
+        rigidbody = gameObject.AddComponent<Rigidbody2D>();
         rigidbody.Sleep();
         rigidbody.gravityScale = 0;
         rigidbody.freezeRotation = true;

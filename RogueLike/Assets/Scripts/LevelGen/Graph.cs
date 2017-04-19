@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization.Formatters;
 
 [System.Serializable]
 public class Graph<T>
@@ -103,8 +105,6 @@ public class Node<T>
     }
 }
 
-
-
 public class Pair<T1, T2>
 {
     public Pair() { }
@@ -113,6 +113,20 @@ public class Pair<T1, T2>
     {
         this.First = first;
         this.Second = second;
+    }
+
+    public override int GetHashCode()
+    {
+        int hash = 17;
+        // Suitable nullity checks etc, of course :)
+        hash = hash * 23 + First.GetHashCode();
+        hash = hash * 23 + Second.GetHashCode();
+        return hash;
+    }
+
+    public override bool Equals(object obj)
+    {
+        return GetHashCode() == obj.GetHashCode();
     }
 
     public T1 First { get; set; }
