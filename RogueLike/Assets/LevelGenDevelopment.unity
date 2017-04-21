@@ -135,9 +135,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0e804db6a8c33234babdd75a3b206d6e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  numRooms: 100
+  m_numInitialRooms: 100
+  m_numMainRooms: 2
+  m_connectionThresholdDistance: 25
   targetWidth: 10
   targetHeight: 10
+  m_pathSize: 1
   isDone: 0
 --- !u!4 &1833404964
 Transform:
