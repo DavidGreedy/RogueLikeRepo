@@ -13,7 +13,13 @@ public class LevelGenerator : MonoBehaviour
     private List<Pair<Room, Room>> connectedRooms;
 
     [SerializeField]
-    private int numRooms;
+    private int m_numInitialRooms;
+
+    [SerializeField]
+    private int m_numMainRooms;
+
+    [SerializeField]
+    private float m_connectionThresholdDistance;
 
     [SerializeField]
     private int targetWidth;
@@ -35,7 +41,7 @@ public class LevelGenerator : MonoBehaviour
     {
         m_rooms = new List<Room>();
 
-        for (int i = 0; i < numRooms; i++)
+        for (int i = 0; i < m_numInitialRooms; i++)
         {
             Vector2 randomPosition = Random.insideUnitCircle * 30.0f;
 
@@ -62,9 +68,10 @@ public class LevelGenerator : MonoBehaviour
 
         m_selectedRooms = m_rooms.Where(x => x.Rect.width * x.Rect.height > (meanWidth * meanHeight)).ToList();
         //m_rooms.Sort((x, y) => Mathf.Abs(x.Position.x * x.Position.y).CompareTo(Mathf.Abs(y.Position.x * y.Position.y)));
-        m_selectedRooms = m_selectedRooms.Take(20).ToList();
+        m_selectedRooms = m_selectedRooms.Take(m_numMainRooms).ToList();
 
-        Connect(m_selectedRooms);
+        Connect();
+        //TODO: Reintroduce Delauny to remove small angled edges
     }
 
     public event Action OnPhysicsComplete;
@@ -171,31 +178,6 @@ public class LevelGenerator : MonoBehaviour
         Gizmos.DrawLine(new Vector2(rect.xMax, rect.yMax), new Vector2(rect.xMax, rect.yMin));
         Gizmos.DrawLine(new Vector2(rect.xMax, rect.yMin), new Vector2(rect.xMin, rect.yMin));
         Gizmos.DrawLine(new Vector2(rect.xMin, rect.yMin), new Vector2(rect.xMin, rect.yMax));
-    }
-
-    public struct Edge2D
-    {
-        private Vector2[] points;
-
-        public Edge2D(Vector2 p0, Vector2 p1)
-        {
-            points = new Vector2[2];
-            points[0] = p0;
-            points[1] = p1;
-        }
-
-        public Vector2 this[int i] { get { return points[i]; } }
-
-        public float Length
-        {
-            get { return Vector2.Distance(points[0], points[1]); }
-        }
-    }
-
-    public class Tree
-    {
-        private List<Edge2D> edges;
-
     }
 
     class Graph
@@ -344,21 +326,7 @@ public class LevelGenerator : MonoBehaviour
         }
     }
 
-    public void Shuffle<T>(IList<T> array)
-    {
-        System.Random rand = new System.Random();
-
-        for (int n = array.Count; n > 1;)
-        {
-            int k = rand.Next(n);
-            --n;
-            T temp = array[n];
-            array[n] = array[k];
-            array[k] = temp;
-        }
-    }
-
-    public void Connect(List<Room> rooms)
+    public void Connect()
     {
         List<Graph.Edge> roomEdges = new List<Graph.Edge>();
 
@@ -392,11 +360,10 @@ public class LevelGenerator : MonoBehaviour
             connectedRooms.Add(new Pair<Room, Room>(m_selectedRooms[spanningTree[i].src], m_selectedRooms[spanningTree[i].dest]));
         }
 
-        float thresholdDist = 25f;
         //Adds any edge whose weight is less than the threshold value
         for (int i = 0; i < roomEdges.Count; i++)
         {
-            if (roomEdges[i].weight < thresholdDist)
+            if (roomEdges[i].weight < m_connectionThresholdDistance)
             {
                 connectedRooms.Add(new Pair<Room, Room>(m_selectedRooms[roomEdges[i].src], m_selectedRooms[roomEdges[i].dest]));
             }
@@ -408,6 +375,8 @@ public class LevelGenerator : MonoBehaviour
 
         connectedRooms = connectedRooms.Distinct().ToList();
         print(connectedRooms.Count + " total edges, with a MST of " + spanningTree.Length + " edges");
+
+
     }
 }
 
