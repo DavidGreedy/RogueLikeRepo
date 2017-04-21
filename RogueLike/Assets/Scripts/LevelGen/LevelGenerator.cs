@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using TriangleNet.Data;
-using TriangleNet.Geometry;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -11,12 +9,8 @@ public class LevelGenerator : MonoBehaviour
     private List<Room> m_rooms;
     private List<Room> m_selectedRooms;
 
-    private TriangleNet.Mesh meshRepresentation;
-
     private Graph.Edge[] spanningTree;
     private List<Pair<Room, Room>> connectedRooms;
-
-    private List<Edge> edges;
 
     [SerializeField]
     private int numRooms;
@@ -70,7 +64,7 @@ public class LevelGenerator : MonoBehaviour
         //m_rooms.Sort((x, y) => Mathf.Abs(x.Position.x * x.Position.y).CompareTo(Mathf.Abs(y.Position.x * y.Position.y)));
         m_selectedRooms = m_selectedRooms.Take(20).ToList();
 
-        Delaunay(m_selectedRooms);
+        Connect(m_selectedRooms);
     }
 
     public event Action OnPhysicsComplete;
@@ -347,13 +341,6 @@ public class LevelGenerator : MonoBehaviour
             }
 
             return result;
-
-            // print the contents of result[] to display the built MST
-            print("Following are the edges in the constructed MST");
-            for (i = 0; i < e; ++i)
-            {
-                print(result[i].src + " -- " + result[i].dest + " == " + result[i].weight);
-            }
         }
     }
 
@@ -371,89 +358,56 @@ public class LevelGenerator : MonoBehaviour
         }
     }
 
-    public void Delaunay(List<Room> rooms)
+    public void Connect(List<Room> rooms)
     {
-        meshRepresentation = new TriangleNet.Mesh();
+        List<Graph.Edge> roomEdges = new List<Graph.Edge>();
 
-        InputGeometry geometry = new InputGeometry();
-
-        Dictionary<Vertex, Room> roomDict = new Dictionary<Vertex, Room>();
-
-        foreach (Room room in rooms)
+        for (int i = 0; i < m_selectedRooms.Count; i++)
         {
-            Vertex point = new Vertex(room.Position.x, room.Position.y);
-            roomDict.Add(point, room);
+            for (int j = i; j < m_selectedRooms.Count; j++)
+            {
+                roomEdges.Add(new Graph.Edge(i, j, Vector2.Distance(m_selectedRooms[i].Position, m_selectedRooms[j].Position)));
+            }
         }
 
-        geometry.points = roomDict.Keys.ToList();
+        roomEdges = roomEdges.Distinct().ToList();
+        //Sort room edges by weight
+        roomEdges.Sort((x, y) => x.weight.CompareTo(y.weight));
 
-        meshRepresentation.Triangulate(geometry);
+        List<int> roomIndices = new List<int>();
 
-        List<Edge> edgesRaw = meshRepresentation.Edges.ToList();
-        List<Graph.Edge> edgeWeights = new List<Graph.Edge>();
-
-        foreach (Edge edge in edgesRaw)
+        for (int i = 0; i < m_selectedRooms.Count; i++)
         {
-            Vertex v0, v1;
-            meshRepresentation.vertices.TryGetValue(edge.P0, out v0);
-            meshRepresentation.vertices.TryGetValue(edge.P1, out v1);
-
-            if (v0 == null || v1 == null)
-                Debug.LogError("Vertex was null");
-            else
-                edgeWeights.Add(new Graph.Edge(v0.ID, v1.ID, Vector2.Distance(new Vector2(v0.x, v0.y), new Vector2(v1.x, v1.y))));
+            roomIndices.Add(i);
         }
 
-        Graph graph = new Graph(meshRepresentation.vertices.Keys.ToList(), edgeWeights);
+        Graph graph = new Graph(roomIndices, roomEdges);
 
         spanningTree = graph.KruskalMST();
 
         connectedRooms = new List<Pair<Room, Room>>();
 
-        foreach (Graph.Edge edge in spanningTree)
+        for (int i = 0; i < spanningTree.Length; i++)
         {
-            Vertex v0, v1;
-            meshRepresentation.vertices.TryGetValue(edge.src, out v0);
-            meshRepresentation.vertices.TryGetValue(edge.dest, out v1);
+            connectedRooms.Add(new Pair<Room, Room>(m_selectedRooms[spanningTree[i].src], m_selectedRooms[spanningTree[i].dest]));
+        }
 
-            if (m_rooms != null && v0 != null && v1 != null)
+        float thresholdDist = 25f;
+        //Adds any edge whose weight is less than the threshold value
+        for (int i = 0; i < roomEdges.Count; i++)
+        {
+            if (roomEdges[i].weight < thresholdDist)
             {
-                Room r0 = m_rooms.First(x => Math.Abs(x.Position.x - v0.x) < 0.01f && Math.Abs(x.Position.y - v0.y) < 0.01f);
-                Room r1 = m_rooms.First(x => Math.Abs(x.Position.x - v1.x) < 0.01f && Math.Abs(x.Position.y - v1.y) < 0.01f);
-
-                connectedRooms.Add(new Pair<Room, Room>(r0, r1));
+                connectedRooms.Add(new Pair<Room, Room>(m_selectedRooms[roomEdges[i].src], m_selectedRooms[roomEdges[i].dest]));
+            }
+            else
+            {
+                break;
             }
         }
 
-        int edgesToAdd = 3;
-        int edgesAdded = 0;
-
-        float threshHoldWeight = 25f;
-
-        List<Graph.Edge> possibleEdges = edgeWeights.Where(x => !spanningTree.Contains(x) && x.weight < threshHoldWeight).ToList();
-
-        Shuffle(possibleEdges);
-
-        possibleEdges.Take(edgesToAdd);
-
-        foreach (Graph.Edge edge in possibleEdges)
-        {
-            Vertex v0, v1;
-            meshRepresentation.vertices.TryGetValue(edge.src, out v0);
-            meshRepresentation.vertices.TryGetValue(edge.dest, out v1);
-
-            if (m_rooms != null && v0 != null && v1 != null)
-            {
-                Room r0 = m_rooms.First(x => Math.Abs(x.Position.x - v0.x) < 0.01f && Math.Abs(x.Position.y - v0.y) < 0.01f);
-                Room r1 = m_rooms.First(x => Math.Abs(x.Position.x - v1.x) < 0.01f && Math.Abs(x.Position.y - v1.y) < 0.01f);
-
-                connectedRooms.Add(new Pair<Room, Room>(r0, r1));
-            }
-        }
-
-
-        print("Total edges: " + edgeWeights.Count + " Possible edges: " + possibleEdges.Count);
-        print(connectedRooms.Count + " Connected");
+        connectedRooms = connectedRooms.Distinct().ToList();
+        print(connectedRooms.Count + " total edges, with a MST of " + spanningTree.Length + " edges");
     }
 }
 
@@ -468,11 +422,6 @@ public class Room
 
     public Vector2 Position { get { return Rect.center; } }
     public Vector3 Size { get { return Rect.size; } }
-
-    public float Ratio
-    {
-        get { return rect.width / rect.height; }
-    }
 
     public void Init(Transform parent, Vector3 position, Vector2 size)
     {
