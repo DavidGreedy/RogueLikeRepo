@@ -14,9 +14,9 @@ public class LevelGenerator : MonoBehaviour
     private List<Pair<Room, Room>> connectedRooms;
 
 
-    private List<Pair<Vector2, Vector2>> path;
-    private List<Pair<Vector2, Vector2>> border;
-    private List<Pair<Vector2, Vector2>> doors;
+    private List<Line> path;
+    private List<Line> border;
+    private List<Line> doors;
 
     private List<Rect> pathAreas;
 
@@ -95,25 +95,25 @@ public class LevelGenerator : MonoBehaviour
         GeneratePaths();
     }
 
-    private Pair<Vector2, Vector2> GetDoor(Pair<Vector2, Vector2> line, bool random)
+    private Line GetDoor(Line line, bool random)
     {
         Vector2 doorPos;
         float xStart, xEnd, yStart, yEnd;
         float doorSizeHalf = doorSize / 2.0f;
 
-        if (Math.Abs(line.First.y - line.Second.y) < 0.01f)
+        if (Math.Abs(line.start.y - line.end.y) < 0.01f)
         {
-            xStart = Mathf.Max(line.First.x, line.Second.x) - doorSizeHalf;
-            xEnd = Mathf.Min(line.First.x, line.Second.x) + doorSizeHalf;
-            doorPos = new Vector2(Mathf.Lerp(xStart, xEnd, random ? NormalDistribution(2) : 0.5f), line.First.y);
-            return new Pair<Vector2, Vector2>(doorPos - new Vector2(doorSizeHalf, 0), doorPos + new Vector2(doorSizeHalf, 0));
+            xStart = Mathf.Max(line.start.x, line.end.x) - doorSizeHalf;
+            xEnd = Mathf.Min(line.start.x, line.end.x) + doorSizeHalf;
+            doorPos = new Vector2(Mathf.Lerp(xStart, xEnd, random ? NormalDistribution(2) : 0.5f), line.start.y);
+            return new Line(doorPos - new Vector2(doorSizeHalf, 0), doorPos + new Vector2(doorSizeHalf, 0));
         }
-        else if (Math.Abs(line.First.x - line.Second.x) < 0.01f)
+        else if (Math.Abs(line.start.x - line.end.x) < 0.01f)
         {
-            yStart = Mathf.Max(line.First.y, line.Second.y) - doorSizeHalf;
-            yEnd = Mathf.Min(line.First.y, line.Second.y) + doorSizeHalf;
-            doorPos = new Vector2(line.First.x, Mathf.Lerp(yStart, yEnd, random ? NormalDistribution(2) : 0.5f));
-            return new Pair<Vector2, Vector2>(doorPos - new Vector2(0, doorSizeHalf), doorPos + new Vector2(0, doorSizeHalf));
+            yStart = Mathf.Max(line.start.y, line.end.y) - doorSizeHalf;
+            yEnd = Mathf.Min(line.start.y, line.end.y) + doorSizeHalf;
+            doorPos = new Vector2(line.start.x, Mathf.Lerp(yStart, yEnd, random ? NormalDistribution(2) : 0.5f));
+            return new Line(doorPos - new Vector2(0, doorSizeHalf), doorPos + new Vector2(0, doorSizeHalf));
         }
         throw new Exception("DOOR NOT CREATED");
     }
@@ -122,9 +122,9 @@ public class LevelGenerator : MonoBehaviour
     {
         // NEED TO WORK OUT THE DIRECTION
         float pathSize = m_pathSize / 2.0f;
-        path = new List<Pair<Vector2, Vector2>>();
-        border = new List<Pair<Vector2, Vector2>>();
-        doors = new List<Pair<Vector2, Vector2>>();
+        path = new List<Line>();
+        border = new List<Line>();
+        doors = new List<Line>();
 
         for (int i = 0; i < connectedRooms.Count; i++)
         {
@@ -148,7 +148,7 @@ public class LevelGenerator : MonoBehaviour
             // Trivial straight line cases
             if (xCommon > m_pathSize || yCommon > m_pathSize)
             {
-                Pair<Vector2, Vector2> borderPair = r0.Rect.Border(r1.Rect);
+                Line borderPair = r0.Rect.Border(r1.Rect);
                 if (r0.Rect.IsTouching(r1.Rect)) // If rooms are touching eachother
                 {
                     border.Add(borderPair);
@@ -161,39 +161,39 @@ public class LevelGenerator : MonoBehaviour
 
                     if (xCommon > m_pathSize)
                     {
-                        float xRand = Mathf.Lerp(borderPair.First.x, borderPair.Second.x, NormalDistribution(2));
+                        float xRand = Mathf.Lerp(borderPair.start.x, borderPair.end.x, NormalDistribution(2));
                         randomPathStart.x = xRand;
-                        randomPathStart.y = Mathf.Min(borderPair.First.y, borderPair.Second.y);
+                        randomPathStart.y = Mathf.Min(borderPair.start.y, borderPair.end.y);
                         randomPathEnd.x = xRand;
-                        randomPathEnd.y = Mathf.Max(borderPair.First.y, borderPair.Second.y);
+                        randomPathEnd.y = Mathf.Max(borderPair.start.y, borderPair.end.y);
 
-                        doors.Add(GetDoor(new Pair<Vector2, Vector2>(new Vector2(xRand - pathSize, randomPathStart.y), new Vector2(xRand + pathSize, randomPathStart.y)), false));
-                        doors.Add(GetDoor(new Pair<Vector2, Vector2>(new Vector2(xRand - pathSize, randomPathEnd.y), new Vector2(xRand + pathSize, randomPathEnd.y)), false));
+                        doors.Add(GetDoor(new Line(new Vector2(xRand - pathSize, randomPathStart.y), new Vector2(xRand + pathSize, randomPathStart.y)), false));
+                        doors.Add(GetDoor(new Line(new Vector2(xRand - pathSize, randomPathEnd.y), new Vector2(xRand + pathSize, randomPathEnd.y)), false));
                     }
                     else if (yCommon > m_pathSize)
                     {
-                        float yRand = Mathf.Lerp(borderPair.First.y, borderPair.Second.y, NormalDistribution(2));
-                        randomPathStart.x = Mathf.Min(borderPair.First.x, borderPair.Second.x);
+                        float yRand = Mathf.Lerp(borderPair.start.y, borderPair.end.y, NormalDistribution(2));
+                        randomPathStart.x = Mathf.Min(borderPair.start.x, borderPair.end.x);
                         randomPathStart.y = yRand;
-                        randomPathEnd.x = Mathf.Max(borderPair.First.x, borderPair.Second.x);
+                        randomPathEnd.x = Mathf.Max(borderPair.start.x, borderPair.end.x);
                         randomPathEnd.y = yRand;
 
-                        doors.Add(GetDoor(new Pair<Vector2, Vector2>(new Vector2(randomPathStart.x, yRand - pathSize), new Vector2(randomPathStart.x, yRand + pathSize)), false));
-                        doors.Add(GetDoor(new Pair<Vector2, Vector2>(new Vector2(randomPathEnd.x, yRand - pathSize), new Vector2(randomPathEnd.x, yRand + pathSize)), false));
+                        doors.Add(GetDoor(new Line(new Vector2(randomPathStart.x, yRand - pathSize), new Vector2(randomPathStart.x, yRand + pathSize)), false));
+                        doors.Add(GetDoor(new Line(new Vector2(randomPathEnd.x, yRand - pathSize), new Vector2(randomPathEnd.x, yRand + pathSize)), false));
                     }
                     else
                     {
                         throw new Exception("ERROR");
                     }
-                    path.Add(new Pair<Vector2, Vector2>(randomPathStart, randomPathEnd));
+                    path.Add(new Line(randomPathStart, randomPathEnd));
                 }
             }
             //More complicated bends
             //TODO: Check for corners that intersect rooms
             else
             {
-                Pair<Vector2, Vector2> start;
-                Pair<Vector2, Vector2> end;
+                Line start;
+                Line end;
 
                 if (Random.value > 0.5f)
                 {
@@ -209,8 +209,8 @@ public class LevelGenerator : MonoBehaviour
                 path.Add(start);
                 path.Add(end);
 
-                doors.Add(GetDoor(new Pair<Vector2, Vector2>(new Vector2(start.First.x, start.First.y - pathSize), new Vector2(start.First.x, start.First.y + pathSize)), false));
-                doors.Add(GetDoor(new Pair<Vector2, Vector2>(new Vector2(end.First.x - pathSize, end.First.y), new Vector2(end.First.x + pathSize, end.First.y)), false));
+                doors.Add(GetDoor(new Line(new Vector2(start.start.x, start.start.y - pathSize), new Vector2(start.start.x, start.start.y + pathSize)), false));
+                doors.Add(GetDoor(new Line(new Vector2(end.start.x - pathSize, end.start.y), new Vector2(end.start.x + pathSize, end.start.y)), false));
             }
         }
     }
@@ -301,7 +301,7 @@ public class LevelGenerator : MonoBehaviour
         {
             //for (int i = 0; i < connectedRooms.Count; i++)
             //{
-            //    Gizmos.DrawLine(connectedRooms[i].First.Position, connectedRooms[i].Second.Position);
+            //    Gizmos.DrawLine(connectedRooms[i].start.Position, connectedRooms[i].end.Position);
             //}
         }
 
@@ -312,27 +312,27 @@ public class LevelGenerator : MonoBehaviour
             {
                 Rect pathRect = new Rect
                 {
-                    xMin = Mathf.Min(path[i].First.x, path[i].Second.x),
-                    xMax = Mathf.Max(path[i].First.x, path[i].Second.x),
-                    yMin = Mathf.Min(path[i].First.y, path[i].Second.y),
-                    yMax = Mathf.Max(path[i].First.y, path[i].Second.y)
+                    xMin = Mathf.Min(path[i].start.x, path[i].end.x),
+                    xMax = Mathf.Max(path[i].start.x, path[i].end.x),
+                    yMin = Mathf.Min(path[i].start.y, path[i].end.y),
+                    yMax = Mathf.Max(path[i].start.y, path[i].end.y)
                 };
 
                 pathRect.size = new Vector2(Mathf.Max(pathRect.size.x, m_pathSize), Mathf.Max(pathRect.size.y, m_pathSize));
 
-                if (Math.Abs(path[i].First.y - path[i].Second.y) < 0.01f)
+                if (Math.Abs(path[i].start.y - path[i].end.y) < 0.01f)
                 {
-                    pathRect.yMin = path[i].First.y - (m_pathSize / 2);
-                    pathRect.yMax = path[i].First.y + (m_pathSize / 2);
+                    pathRect.yMin = path[i].start.y - (m_pathSize / 2);
+                    pathRect.yMax = path[i].start.y + (m_pathSize / 2);
                 }
-                else if (Math.Abs(path[i].First.x - path[i].Second.x) < 0.01f)
+                else if (Math.Abs(path[i].start.x - path[i].end.x) < 0.01f)
                 {
-                    pathRect.xMin = path[i].First.x - (m_pathSize / 2);
-                    pathRect.xMax = path[i].First.x + (m_pathSize / 2);
+                    pathRect.xMin = path[i].start.x - (m_pathSize / 2);
+                    pathRect.xMax = path[i].start.x + (m_pathSize / 2);
                 }
 
                 DrawRect(pathRect, new Color(0f, 0f, 0.2f, 0.2f), new Color(0f, 0f, 0.2f, 0.2f));
-                Gizmos.DrawLine(path[i].First, path[i].Second);
+                Gizmos.DrawLine(path[i].start, path[i].end);
             }
         }
 
@@ -341,7 +341,7 @@ public class LevelGenerator : MonoBehaviour
         //    Gizmos.color = Color.white;
         //    for (int i = 0; i < border.Count; i++)
         //    {
-        //        Gizmos.DrawLine(border[i].First, border[i].Second);
+        //        Gizmos.DrawLine(border[i].start, border[i].end);
         //    }
         //}
 
@@ -350,7 +350,7 @@ public class LevelGenerator : MonoBehaviour
             Gizmos.color = Color.green;
             for (int i = 0; i < doors.Count; i++)
             {
-                Gizmos.DrawLine(doors[i].First, doors[i].Second);
+                Gizmos.DrawLine(doors[i].start, doors[i].end);
             }
         }
     }
@@ -569,6 +569,18 @@ public class LevelGenerator : MonoBehaviour
     }
 }
 
+public class Line
+{
+    public Vector2 start;
+    public Vector2 end;
+
+    public Line(Vector2 start, Vector2 end)
+    {
+        this.start = start;
+        this.end = end;
+    }
+}
+
 public class Room
 {
     private GameObject gameObject;
@@ -623,17 +635,17 @@ public class Room
         gameObject.name = collider.size.ToString();
     }
 
-    public Pair<Vector2, Vector2> GetHorizontalTo(Room other)
+    public Line GetHorizontalTo(Room other)
     {
-        return new Pair<Vector2, Vector2>(
+        return new Line(
             new Vector2(other.Position.x > Position.x ? Rect.xMax : Rect.xMin, Position.y),
             new Vector2(other.Position.x, Position.y));
     }
 
-    public Pair<Vector2, Vector2> GetVerticalTo(Room other)
+    public Line GetVerticalTo(Room other)
     {
         return
-            new Pair<Vector2, Vector2>(
+            new Line(
                 new Vector2(Position.x, other.Position.y > Position.y ? Rect.yMax : Rect.yMin),
                 new Vector2(Position.x, other.Position.y));
     }
