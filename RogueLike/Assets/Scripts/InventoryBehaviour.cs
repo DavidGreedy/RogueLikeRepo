@@ -18,6 +18,7 @@ public class InventoryBehaviour : MonoBehaviour
     private void Start()
     {
         OnWeaponSwap += LogWeaponSwap;
+        print("Active weapon: " + ActiveWeapon.name);
     }
 
     public void Cycle(float delta)

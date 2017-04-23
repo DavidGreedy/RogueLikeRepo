@@ -20,9 +20,6 @@ public class CharacterController : MonoBehaviour
     [SerializeField]
     private GamePad.Index m_gamepadIndex;
 
-    [SerializeField]
-    private TwinStickCrosshairBehaviour m_crosshair;
-
     private void Start()
     {
         gameObject.name = string.Format("Player {0}", m_gamepadIndex);
@@ -70,11 +67,6 @@ public class CharacterController : MonoBehaviour
         moveDir.Normalize();
 
         m_rigidbody.velocity = m_character.Move(moveDir, m_rigidbody.velocity, 10.0f, 50f);
-
-        if (m_character.ActiveWeapon)
-        {
-            m_crosshair.SetPosition(inputDirR.normalized);
-        }
 
         if (GamePad.GetButton(GamePad.Button.RightShoulder, m_gamepadIndex) || Input.GetMouseButton(0))
         {
