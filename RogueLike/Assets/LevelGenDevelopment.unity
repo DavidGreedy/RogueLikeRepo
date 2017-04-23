@@ -140,8 +140,8 @@ MonoBehaviour:
   m_connectionThresholdDistance: 25
   targetWidth: 10
   targetHeight: 10
-  m_pathSize: 1
-  doorSize: 0
+  m_pathSize: 2
+  doorSize: 1
   isDone: 0
 --- !u!4 &1833404964
 Transform:
