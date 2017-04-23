@@ -105,14 +105,14 @@ public class LevelGenerator : MonoBehaviour
         {
             xStart = Mathf.Max(line.First.x, line.Second.x) - pathSizeHalf;
             xEnd = Mathf.Min(line.First.x, line.Second.x) + pathSizeHalf;
-            doorPos = new Vector2(Random.Range(xStart, xEnd), line.First.y);
+            doorPos = new Vector2(Mathf.Lerp(xStart, xEnd, NormalDistribution(2)), line.First.y);
             return new Pair<Vector2, Vector2>(doorPos - new Vector2(pathSizeHalf, 0), doorPos + new Vector2(pathSizeHalf, 0));
         }
         else if (Math.Abs(line.First.x - line.Second.x) < 0.01f)
         {
             yStart = Mathf.Max(line.First.y, line.Second.y) - pathSizeHalf;
             yEnd = Mathf.Min(line.First.y, line.Second.y) + pathSizeHalf;
-            doorPos = new Vector2(line.First.x, Random.Range(yStart, yEnd));
+            doorPos = new Vector2(line.First.x, Mathf.Lerp(yStart, yEnd, NormalDistribution(2)));
             return new Pair<Vector2, Vector2>(doorPos - new Vector2(0, pathSizeHalf), doorPos + new Vector2(0, pathSizeHalf));
         }
         throw new Exception("DOOR NOT CREATED");
@@ -145,33 +145,49 @@ public class LevelGenerator : MonoBehaviour
             int xCommon = xMax - xMin;
             int yCommon = yMax - yMin;
 
-            Pair<Vector2, Vector2> bP = r0.Rect.Border(r1.Rect);
-
-            //xCommon = Mathf.Abs(bP.First.x - bP.Second.x);
-            //yCommon = Mathf.Abs(bP.First.y - bP.Second.y);
-
-            //border.Add(bP);
-
             // Trivial straight line cases
             if (xCommon > m_pathSize || yCommon > m_pathSize)
             {
-                float randX = Mathf.Lerp(Mathf.RoundToInt(xMin + pathSize), Mathf.RoundToInt(xMax - pathSize), 0.5f);
-                float randY = Mathf.Lerp(Mathf.RoundToInt(yMin + pathSize), Mathf.RoundToInt(yMax - pathSize), 0.5f);
-
-                Vector2 randomPathStart = new Vector2(xCommon > pathSize ? randX : xMin, yCommon > pathSize ? randY : yMin);
-                Vector2 randomPathEnd = new Vector2(xCommon > pathSize ? randX : xMax, yCommon > pathSize ? randY : yMax);
-
-                if (r0.Rect.IsTouching(r1.Rect))
+                Pair<Vector2, Vector2> borderPair = r0.Rect.Border(r1.Rect);
+                if (r0.Rect.IsTouching(r1.Rect)) // If rooms are touching eachother
                 {
-                    Pair<Vector2, Vector2> borderPair = r0.Rect.Border(r1.Rect);
                     border.Add(borderPair);
-
                     doors.Add(GetDoor(borderPair));
                 }
-                else
+                else // Need to connect them with a path
                 {
+                    Vector2 randomPathStart;
+                    Vector2 randomPathEnd;
+
+                    if (xCommon > m_pathSize)
+                    {
+                        float xRand = Mathf.Lerp(borderPair.First.x, borderPair.Second.x, NormalDistribution(2));
+                        randomPathStart.x = xRand;
+                        randomPathStart.y = Mathf.Min(borderPair.First.y, borderPair.Second.y);
+                        randomPathEnd.x = xRand;
+                        randomPathEnd.y = Mathf.Max(borderPair.First.y, borderPair.Second.y);
+
+                        doors.Add(GetDoor(new Pair<Vector2, Vector2>(new Vector2(xRand - pathSize, randomPathStart.y), new Vector2(xRand + pathSize, randomPathStart.y))));
+                        doors.Add(GetDoor(new Pair<Vector2, Vector2>(new Vector2(xRand - pathSize, randomPathEnd.y), new Vector2(xRand + pathSize, randomPathEnd.y))));
+                    }
+                    else if (yCommon > m_pathSize)
+                    {
+                        float yRand = Mathf.Lerp(borderPair.First.y, borderPair.Second.y, NormalDistribution(2));
+                        randomPathStart.x = Mathf.Min(borderPair.First.x, borderPair.Second.x);
+                        randomPathStart.y = yRand;
+                        randomPathEnd.x = Mathf.Max(borderPair.First.x, borderPair.Second.x);
+                        randomPathEnd.y = yRand;
+
+                        doors.Add(GetDoor(new Pair<Vector2, Vector2>(new Vector2(randomPathStart.x, yRand - pathSize), new Vector2(randomPathStart.x, yRand + pathSize))));
+                        doors.Add(GetDoor(new Pair<Vector2, Vector2>(new Vector2(randomPathEnd.x, yRand - pathSize), new Vector2(randomPathEnd.x, yRand + pathSize))));
+                    }
+                    else
+                    {
+                        throw new Exception("ERROR");
+                    }
                     path.Add(new Pair<Vector2, Vector2>(randomPathStart, randomPathEnd));
                 }
+
             }
             //More complicated bends
             //TODO: Check for corners that intersect rooms
