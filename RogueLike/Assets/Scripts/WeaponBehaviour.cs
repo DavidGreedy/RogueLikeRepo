@@ -21,7 +21,7 @@ public class WeaponBehaviour : MonoBehaviour
         if (m_isActive) { return; }
         if (m_animator)
         {
-            m_animator.SetBool("PrimaryAttack", true);
+            m_animator.SetTrigger("Primary");
         }
         StartCoroutine(StartCooldownTimer(primaryCoolDown, SetWeaponActive, SetWeaponInActive));
         //Debug.Log(string.Format("{0} used PRIMARY", name));
