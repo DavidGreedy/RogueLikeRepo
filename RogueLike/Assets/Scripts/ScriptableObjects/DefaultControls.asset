@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9947ada8fea9fd941a5715a5804a592e, type: 3}
+  m_Name: DefaultControls
+  m_EditorClassIdentifier: 
+  index: 0
+  roll: 1
+  jump: 0
+  useWeapon: 4
+  swapWeapon: 2
+  switchItem: 0
+  useItem: 0
+  move: 0
+  look: 0
