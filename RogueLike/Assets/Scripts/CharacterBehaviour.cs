@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections;
+using UnityEngine;
 
 public class CharacterBehaviour : SolidMonoBehaviour
 {
@@ -6,20 +7,52 @@ public class CharacterBehaviour : SolidMonoBehaviour
     private float m_movementSpeed;
 
     [SerializeField]
-    private float m_maxMovementSpeed;
+    private float m_rotationSpeed;
 
+
+    [SerializeField]
+    private float m_friction;
+
+    [SerializeField]
     private float m_acceleration;
 
     [SerializeField]
     protected HealthBehaviour m_health;
 
-    [SerializeField]
-    private ParticleSystem m_takeDamageEffect;
-
     private Team m_team;
 
     [SerializeField]
+    private bool m_isMovementLocked;
+
+    [SerializeField]
+    private bool m_canUseAction;
+
+    [SerializeField]
+    private Vector3 m_moveVec;
+
+    [SerializeField]
+    private Vector3 m_lookVec;
+
+    public Vector3 MoveVector
+    {
+        get { return m_moveVec; }
+        set { m_moveVec = value; }
+    }
+
+    public Vector3 LookVector
+    {
+        get { return m_lookVec; }
+        set { m_lookVec = value; }
+    }
+
+    [SerializeField]
     private InventoryBehaviour m_inventory;
+
+    [SerializeField]
+    private Animator m_animator;
+
+    [SerializeField]
+    private Rigidbody m_rigidbody;
 
     public WeaponBehaviour ActiveWeapon
     {
@@ -31,16 +64,16 @@ public class CharacterBehaviour : SolidMonoBehaviour
         get { return m_inventory; }
     }
 
-    public Vector3 Accelerate(Vector3 accelDir, Vector3 prevVelocity, float accelerate)
+    public Vector3 Accelerate(Vector3 accelDir, Vector3 prevVelocity, float acceleration)
     {
         float yVel = prevVelocity.y;
         prevVelocity.y = 0f;
 
-        float accelVel = accelerate * Time.deltaTime; // Accelerated velocity in direction of movment
+        float accelVel = acceleration * Time.deltaTime; // Accelerated velocity in direction of movment
 
-        if (accelVel > m_maxMovementSpeed)
+        if (accelVel > m_movementSpeed)
         {
-            accelVel = m_maxMovementSpeed;
+            accelVel = m_movementSpeed;
         }
 
         Vector3 newVel = prevVelocity + accelDir * accelVel;
@@ -49,20 +82,46 @@ public class CharacterBehaviour : SolidMonoBehaviour
         return newVel;
     }
 
-    public Vector3 Move(Vector3 dir, Vector3 prevVelocity, float friction, float acceleration)
+    public Vector3 Move(Vector3 dir, float friction, float acceleration)
     {
         // Apply Friction
-        float yVel = prevVelocity.y;
-        prevVelocity.y = 0f;
+        Vector3 prevVel = m_rigidbody.velocity;
+        float yVel = prevVel.y;
+        prevVel.y = 0f;
 
-        float speed = prevVelocity.magnitude;
+        float speed = prevVel.magnitude;
         if (speed != 0f) // To avoid divide by zero errors
         {
             float drop = speed * friction * Time.deltaTime;
-            prevVelocity *= Mathf.Max(speed - drop, 0f) / speed; // Scale the velocity based on friction.
+            prevVel *= Mathf.Max(speed - drop, 0f) / speed; // Scale the velocity based on friction.
+
         }
-        prevVelocity.y = yVel;
-        return Accelerate(dir, prevVelocity, acceleration);
+        prevVel.y = yVel;
+
+        return Accelerate(dir, prevVel, acceleration);
+    }
+
+    void RotateTowardsMovementDir(Vector3 targetDirection)
+    {
+        if (targetDirection != Vector3.zero /*&& !isStrafing && !isRolling && !isBlocking*/)
+        {
+            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(targetDirection), Time.deltaTime * m_rotationSpeed);
+        }
+    }
+
+    public IEnumerator LockMovement(float delayTime, float lockTime)
+    {
+        yield return new WaitForSeconds(delayTime);
+        m_isMovementLocked = true;
+        m_canUseAction = false;
+        m_animator.SetBool("Moving", false);
+        m_rigidbody.velocity = Vector3.zero;
+        m_rigidbody.angularVelocity = Vector3.zero;
+        m_animator.applyRootMotion = true;
+        yield return new WaitForSeconds(lockTime);
+        m_canUseAction = true;
+        m_isMovementLocked = false;
+        m_animator.applyRootMotion = false;
     }
 
     void Start()
@@ -75,31 +134,43 @@ public class CharacterBehaviour : SolidMonoBehaviour
         }
         m_health.OnDeath += Kill;
 
-        if (!m_takeDamageEffect)
-        {
-            Debug.LogError(string.Format("No DamageEffect ParticleSystem attached to {0}", gameObject.name));
-            gameObject.SetActive(false);
-            return;
-        }
-        m_takeDamageEffect.Stop();
-
         m_team = new Team();
 
         //Debug.Log(string.Format("{0}: Team {1}", gameObject.name, m_team.ID));
     }
 
-    public void SetLookDirection(Vector3 dir)
+    private void LateUpdate()
     {
-        if (dir == Vector3.zero) { return; }
+        Vector3 movement = m_moveVec.magnitude > 0.1f && m_moveVec.magnitude < 1.0f ? m_moveVec : m_moveVec.normalized;
+        Vector3 lookDirection = m_lookVec.normalized;
 
-        transform.forward = dir.normalized;
+        if (m_lookVec.magnitude > 0.1f)
+        {
+            RotateTowardsMovementDir(lookDirection);
+        }
+        else if (m_moveVec.magnitude > 0.1f)
+        {
+            RotateTowardsMovementDir(m_moveVec.normalized);
+        }
+
+        if (!m_isMovementLocked && m_moveVec.magnitude > 0.1f)
+        {
+            m_rigidbody.velocity = m_moveVec * m_movementSpeed;
+            m_animator.SetBool("Moving", true);
+            m_animator.SetFloat("Velocity X", Mathf.Abs(m_rigidbody.velocity.x));
+            m_animator.SetFloat("Velocity Z", Mathf.Abs(m_rigidbody.velocity.z));
+        }
+        else
+        {
+            m_rigidbody.velocity = Vector3.zero;
+            m_animator.SetBool("Moving", false);
+        }
     }
 
     public void Damage(int amount)
     {
         m_health.Modify(-amount);
         Debug.Log(string.Format("{0} has been taken {1} hp damage", gameObject.name, amount));
-        m_takeDamageEffect.Play();
     }
 
     public void Heal(int amount)
@@ -118,5 +189,30 @@ public class CharacterBehaviour : SolidMonoBehaviour
     {
         base.Hit(hit, projectile);
         Damage(projectile.Damage);
+    }
+
+    void Hit()
+    {
+
+    }
+
+    void FootL()
+    {
+
+    }
+
+    void FootR()
+    {
+
+    }
+
+    void Jump()
+    {
+
+    }
+
+    void Land()
+    {
+
     }
 }

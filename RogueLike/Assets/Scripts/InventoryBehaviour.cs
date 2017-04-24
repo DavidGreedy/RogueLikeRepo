@@ -18,12 +18,16 @@ public class InventoryBehaviour : MonoBehaviour
     private void Start()
     {
         OnWeaponSwap += LogWeaponSwap;
-        print("Active weapon: " + ActiveWeapon.name);
+        if (ActiveWeapon)
+        {
+            print("Active weapon: " + ActiveWeapon.name);
+        }
     }
 
     public void Cycle(float delta)
     {
-        if (delta == 0) { return; }
+        if (delta == 0)
+        { return; }
         m_activeIndex += delta > 0 ? 1 : -1;
 
         if (m_activeIndex == m_weaponList.Count)
