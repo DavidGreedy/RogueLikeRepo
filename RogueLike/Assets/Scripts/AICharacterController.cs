@@ -4,7 +4,7 @@ using UnityEngine.AI;
 public class AICharacterController : MonoBehaviour
 {
     [SerializeField]
-    private Transform m_target;
+    private CharacterBehaviour m_targetCharacter;
 
     [SerializeField]
     private CharacterBehaviour m_character;
@@ -25,8 +25,6 @@ public class AICharacterController : MonoBehaviour
     private float m_waitRange = 20f;
 
 
-
-
     [SerializeField]
     private float m_remainingDistance;
 
@@ -45,14 +43,14 @@ public class AICharacterController : MonoBehaviour
     {
         m_combatState = CombatState.WAITING;
         m_path = new NavMeshPath();
-        NavMesh.CalculatePath(transform.position, m_target.position, NavMesh.AllAreas, m_path);
+        NavMesh.CalculatePath(transform.position, m_targetCharacter.transform.position, NavMesh.AllAreas, m_path);
     }
 
     private void Update()
     {
-        if (m_target)
+        if (m_targetCharacter.IsAlive)
         {
-            NavMesh.CalculatePath(transform.position, m_target.position, NavMesh.AllAreas, m_path);
+            NavMesh.CalculatePath(transform.position, m_targetCharacter.transform.position, NavMesh.AllAreas, m_path);
             m_remainingDistance = 0;
 
             for (int i = 0; i < m_path.corners.Length - 1; i++)

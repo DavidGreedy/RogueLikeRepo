@@ -77,6 +77,14 @@ public class CharacterBehaviour : SolidMonoBehaviour
         }
     }
 
+    public bool IsAlive
+    {
+        get
+        {
+            return m_isAlive;
+        }
+    }
+
     public Vector3 Accelerate(Vector3 accelDir, Vector3 prevVelocity, float acceleration)
     {
         float yVel = prevVelocity.y;
@@ -84,9 +92,9 @@ public class CharacterBehaviour : SolidMonoBehaviour
 
         float accelVel = acceleration * Time.deltaTime; // Accelerated velocity in direction of movment
 
-        if (accelVel > MovementSpeed)
+        if (accelVel > m_movementSpeed)
         {
-            accelVel = MovementSpeed;
+            accelVel = m_movementSpeed;
         }
 
         Vector3 newVel = prevVelocity + accelDir * accelVel;
@@ -177,12 +185,12 @@ public class CharacterBehaviour : SolidMonoBehaviour
         if (!m_isMovementLocked && m_moveVec.magnitude > 0.1f)
         {
             m_isStrafing = m_lookVec.magnitude > 0.1f;//Vector3.Dot(transform.forward, movement.normalized) < 0.5f;
-            m_rigidbody.velocity = movement * (m_isStrafing ? m_strafeSpeed : MovementSpeed);
+            m_rigidbody.velocity = movement * (m_isStrafing ? m_strafeSpeed : m_movementSpeed);
             m_animator.SetBool("Moving", true);
 
             Vector3 forwardVel = transform.InverseTransformVector(m_rigidbody.velocity); // Gets the velocity in the forward direction
             m_animator.SetFloat("Velocity X", forwardVel.x / m_strafeSpeed);
-            m_animator.SetFloat("Velocity Z", forwardVel.z / MovementSpeed);
+            m_animator.SetFloat("Velocity Z", forwardVel.z / m_movementSpeed);
         }
         else
         {
@@ -201,8 +209,10 @@ public class CharacterBehaviour : SolidMonoBehaviour
 
     public void Damage(int amount)
     {
+        StartCoroutine(LockMovement(0f, 0.3f));
         m_health.Modify(-amount);
         Debug.Log(string.Format("{0} has been taken {1} hp damage", gameObject.name, amount));
+        m_animator.SetTrigger("GetHit1Trigger");
     }
 
     public void Heal(int amount)
@@ -259,7 +269,7 @@ public class CharacterBehaviour : SolidMonoBehaviour
 
                 if (hitCharacter)
                 {
-                    hitCharacter.Damage(50);
+                    hitCharacter.Damage(40);
                 }
             }
         }
