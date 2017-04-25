@@ -13,12 +13,6 @@ public class CharacterBehaviour : SolidMonoBehaviour
     private float m_rotationSpeed;
 
     [SerializeField]
-    private float m_friction;
-
-    [SerializeField]
-    private float m_acceleration;
-
-    [SerializeField]
     protected HealthBehaviour m_health;
 
     private Team m_team;
