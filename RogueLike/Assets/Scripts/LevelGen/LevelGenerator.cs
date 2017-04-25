@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -362,7 +364,9 @@ public class LevelGenerator : MonoBehaviour
 
     public void DrawRect(Rect rect, Color fill, Color outline)
     {
+#if UNITY_EDITOR
         Handles.DrawSolidRectangleWithOutline(rect, fill, outline);
+#endif
         //Gizmos.DrawLine(new Vector2(rect.xMin, rect.yMax), new Vector2(rect.xMax, rect.yMax));
         //Gizmos.DrawLine(new Vector2(rect.xMax, rect.yMax), new Vector2(rect.xMax, rect.yMin));
         //Gizmos.DrawLine(new Vector2(rect.xMax, rect.yMin), new Vector2(rect.xMin, rect.yMin));
