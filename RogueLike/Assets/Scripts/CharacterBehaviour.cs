@@ -63,6 +63,14 @@ public class CharacterBehaviour : SolidMonoBehaviour
         get { return m_inventory; }
     }
 
+    public float MovementSpeed
+    {
+        get
+        {
+            return m_movementSpeed;
+        }
+    }
+
     public Vector3 Accelerate(Vector3 accelDir, Vector3 prevVelocity, float acceleration)
     {
         float yVel = prevVelocity.y;
@@ -70,9 +78,9 @@ public class CharacterBehaviour : SolidMonoBehaviour
 
         float accelVel = acceleration * Time.deltaTime; // Accelerated velocity in direction of movment
 
-        if (accelVel > m_movementSpeed)
+        if (accelVel > MovementSpeed)
         {
-            accelVel = m_movementSpeed;
+            accelVel = MovementSpeed;
         }
 
         Vector3 newVel = prevVelocity + accelDir * accelVel;
@@ -156,12 +164,12 @@ public class CharacterBehaviour : SolidMonoBehaviour
         if (!m_isMovementLocked && m_moveVec.magnitude > 0.1f)
         {
             m_isStrafing = m_lookVec.magnitude > 0.1f;//Vector3.Dot(transform.forward, movement.normalized) < 0.5f;
-            m_rigidbody.velocity = movement * (m_isStrafing ? m_strafeSpeed : m_movementSpeed);
+            m_rigidbody.velocity = movement * (m_isStrafing ? m_strafeSpeed : MovementSpeed);
             m_animator.SetBool("Moving", true);
 
             Vector3 forwardVel = transform.InverseTransformVector(m_rigidbody.velocity); // Gets the velocity in the forward direction
             m_animator.SetFloat("Velocity X", forwardVel.x / m_strafeSpeed);
-            m_animator.SetFloat("Velocity Z", forwardVel.z / m_movementSpeed);
+            m_animator.SetFloat("Velocity Z", forwardVel.z / MovementSpeed);
         }
         else
         {
@@ -170,6 +178,9 @@ public class CharacterBehaviour : SolidMonoBehaviour
             m_animator.SetBool("Moving", false);
         }
         m_animator.SetBool("Strafing", m_isStrafing);
+
+        m_moveVec = Vector3.zero;
+        m_lookVec = Vector3.zero;
     }
 
     public void Damage(int amount)
