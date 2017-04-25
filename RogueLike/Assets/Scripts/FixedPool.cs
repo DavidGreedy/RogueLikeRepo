@@ -14,6 +14,7 @@ public class MonoPool<T> where T : MonoBehaviour
         for (int i = 0; i < size; i++)
         {
             T poolObject = GameObject.Instantiate(initialValue);
+            poolObject.gameObject.hideFlags = HideFlags.HideInHierarchy;
             poolObject.gameObject.name = typeof(T).Name + " " + i;
             poolObject.gameObject.SetActive(false);
             m_objectQueue[i] = poolObject;

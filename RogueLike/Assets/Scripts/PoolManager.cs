@@ -15,7 +15,8 @@ public class PoolManager : SingletonBehaviour<PoolManager>
 
     public void Add<T>(T objectToPool, int count) where T : MonoBehaviour
     {
-        if (m_pooledMonoBehaviours.ContainsKey(typeof(T))) { return; }
+        if (m_pooledMonoBehaviours.ContainsKey(typeof(T)))
+        { return; }
         m_pooledMonoBehaviours.Add(typeof(T), new MonoPool<MonoBehaviour>(count, objectToPool));
 
         Debug.Log("ADDED " + count + " " + objectToPool.name + " to pool");
