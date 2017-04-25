@@ -24,6 +24,9 @@ public class CharacterBehaviour : SolidMonoBehaviour
     private bool m_canUseAction;
 
     [SerializeField]
+    private bool m_isAlive = true;
+
+    [SerializeField]
     private bool m_isStrafing;
 
     [SerializeField]
@@ -43,6 +46,9 @@ public class CharacterBehaviour : SolidMonoBehaviour
         get { return m_lookVec; }
         set { m_lookVec = value; }
     }
+
+    [SerializeField]
+    private LayerMask m_attackLayer;
 
     [SerializeField]
     private InventoryBehaviour m_inventory;
@@ -139,7 +145,7 @@ public class CharacterBehaviour : SolidMonoBehaviour
             gameObject.SetActive(false);
             return;
         }
-        m_health.OnDeath += Kill;
+        m_health.OnDeath += Death;
 
         m_team = new Team();
 
@@ -148,17 +154,24 @@ public class CharacterBehaviour : SolidMonoBehaviour
 
     private void LateUpdate()
     {
+        if (!m_isAlive)
+        {
+            return;
+        }
         m_moveVec.y = 0;
         Vector3 movement = m_moveVec.magnitude > 0.1f && m_moveVec.magnitude < 1.0f ? m_moveVec : m_moveVec.normalized;
         Vector3 lookDirection = m_lookVec.normalized;
 
-        if (m_lookVec.magnitude > 0.1f)
+        if (!m_isMovementLocked)
         {
-            RotateTowardsMovementDir(lookDirection);
-        }
-        else if (m_moveVec.magnitude > 0.1f)
-        {
-            RotateTowardsMovementDir(m_moveVec.normalized);
+            if (m_lookVec.magnitude > 0.1f)
+            {
+                RotateTowardsMovementDir(lookDirection);
+            }
+            else if (m_moveVec.magnitude > 0.1f)
+            {
+                RotateTowardsMovementDir(m_moveVec.normalized);
+            }
         }
 
         if (!m_isMovementLocked && m_moveVec.magnitude > 0.1f)
@@ -177,7 +190,10 @@ public class CharacterBehaviour : SolidMonoBehaviour
             m_rigidbody.velocity = Vector3.zero;
             m_animator.SetBool("Moving", false);
         }
-        m_animator.SetBool("Strafing", m_isStrafing);
+        if (!m_isMovementLocked)
+        {
+            m_animator.SetBool("Strafing", m_isStrafing);
+        }
 
         m_moveVec = Vector3.zero;
         m_lookVec = Vector3.zero;
@@ -195,21 +211,58 @@ public class CharacterBehaviour : SolidMonoBehaviour
         Debug.Log(string.Format("{0} has been healed for {1} hp", gameObject.name, amount));
     }
 
-    public void Kill()
+    //public void Kill()
+    //{
+    //    Debug.Log(string.Format("{0} has been killed", gameObject.name));
+    //    Destroy(this.gameObject);
+    //}
+
+    //public override void Hit(RaycastHit hit, ProjectileBehaviour projectile)
+    //{
+    //    base.Hit(hit, projectile);
+    //    Damage(projectile.Damage);
+    //}
+
+    public void Attack()
     {
-        Debug.Log(string.Format("{0} has been killed", gameObject.name));
-        Destroy(this.gameObject);
+        if (m_canUseAction && m_isAlive)
+        {
+            StartCoroutine(LockMovement(0.1f, 0.5f));
+            m_animator.SetTrigger("Attack6Trigger");
+        }
     }
 
-    public override void Hit(RaycastHit hit, ProjectileBehaviour projectile)
+    public void Death()
     {
-        base.Hit(hit, projectile);
-        Damage(projectile.Damage);
+        m_isAlive = false;
+        m_rigidbody.isKinematic = true;
+        m_animator.SetTrigger("Death1Trigger");
+
+        GetComponent<Collider>().enabled = false;
+        this.enabled = false;
     }
 
     void Hit()
     {
+        RaycastHit hit;
+        Ray ray = new Ray(transform.position + Vector3.up, transform.forward);
+        Debug.DrawRay(ray.origin, ray.direction);
 
+        Physics.Raycast(ray, out hit, m_attackLayer);
+
+        if (hit.transform != null)
+        {
+            if (hit.distance < 0.7f)
+            {
+                print(string.Format("HIT: {0}", hit.collider.name));
+                CharacterBehaviour hitCharacter = hit.collider.GetComponent<CharacterBehaviour>();
+
+                if (hitCharacter)
+                {
+                    hitCharacter.Damage(50);
+                }
+            }
+        }
     }
 
     void FootL()

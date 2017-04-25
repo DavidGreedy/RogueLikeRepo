@@ -10,16 +10,22 @@ public class AICharacterController : MonoBehaviour
     private CharacterBehaviour m_character;
 
     [SerializeField]
+    private float m_attackRange = 1.5f;
+
+    [SerializeField]
+    private float m_enterCombatRange = 3f;
+
+    [SerializeField]
+    private float m_exitCombatRange = 5f;
+
+    [SerializeField]
     private float m_seekRange = 8f;
 
     [SerializeField]
-    private float m_enterCombatRange = 3;
-
-    [SerializeField]
-    private float m_exitCombatRange = 5;
-
-    [SerializeField]
     private float m_waitRange = 20f;
+
+
+
 
     [SerializeField]
     private float m_remainingDistance;
@@ -94,6 +100,10 @@ public class AICharacterController : MonoBehaviour
                         if (m_remainingDistance > m_exitCombatRange)
                         {
                             m_combatState = CombatState.SEEKING;
+                        }
+                        if (m_remainingDistance < m_attackRange)
+                        {
+                            m_character.Attack();
                         }
                     }
                     break;

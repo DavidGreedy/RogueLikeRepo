@@ -36,5 +36,10 @@ public class CharacterController : MonoBehaviour
 
         m_character.MoveVector = moveDir;
         m_character.LookVector = lookDir;
+
+        if (GamePad.GetButtonDown(GamePad.Button.RightShoulder, m_gamepadIndex))
+        {
+            m_character.Attack();
+        }
     }
 }
