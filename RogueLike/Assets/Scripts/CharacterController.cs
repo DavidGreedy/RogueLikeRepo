@@ -28,11 +28,11 @@ public class CharacterController : MonoBehaviour
         inputDirL = GamePad.GetAxis(GamePad.Axis.LeftStick, m_gamepadIndex);
         inputDirR = GamePad.GetAxis(GamePad.Axis.RightStick, m_gamepadIndex);
 
-        Vector3 moveDir = m_camera.transform.TransformDirection(new Vector3(inputDirL.x, 0, inputDirL.y));
-        Vector3 lookDir = m_camera.transform.TransformDirection(new Vector3(inputDirR.x, 0, inputDirR.y));
+        Vector3 moveDir = /*m_camera.transform.TransformDirection(*/ new Vector3(inputDirL.x, 0, inputDirL.y);
+        Vector3 lookDir = /*m_camera.transform.TransformDirection(*/new Vector3(inputDirR.x, 0, inputDirR.y);
 
-        lookDir.y = 0;
-        moveDir.y = 0;
+        //lookDir.y = 0;
+        //moveDir.y = 0;
 
         m_character.MoveVector = moveDir;
         m_character.LookVector = lookDir;

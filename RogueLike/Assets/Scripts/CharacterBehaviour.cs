@@ -7,8 +7,10 @@ public class CharacterBehaviour : SolidMonoBehaviour
     private float m_movementSpeed;
 
     [SerializeField]
-    private float m_rotationSpeed;
+    private float m_strafeSpeed;
 
+    [SerializeField]
+    private float m_rotationSpeed;
 
     [SerializeField]
     private float m_friction;
@@ -26,6 +28,9 @@ public class CharacterBehaviour : SolidMonoBehaviour
 
     [SerializeField]
     private bool m_canUseAction;
+
+    [SerializeField]
+    private bool m_isStrafing;
 
     [SerializeField]
     private Vector3 m_moveVec;
@@ -141,6 +146,7 @@ public class CharacterBehaviour : SolidMonoBehaviour
 
     private void LateUpdate()
     {
+        m_moveVec.y = 0;
         Vector3 movement = m_moveVec.magnitude > 0.1f && m_moveVec.magnitude < 1.0f ? m_moveVec : m_moveVec.normalized;
         Vector3 lookDirection = m_lookVec.normalized;
 
@@ -155,16 +161,21 @@ public class CharacterBehaviour : SolidMonoBehaviour
 
         if (!m_isMovementLocked && m_moveVec.magnitude > 0.1f)
         {
-            m_rigidbody.velocity = m_moveVec * m_movementSpeed;
+            m_isStrafing = m_lookVec.magnitude > 0.1f;//Vector3.Dot(transform.forward, movement.normalized) < 0.5f;
+            m_rigidbody.velocity = movement * (m_isStrafing ? m_strafeSpeed : m_movementSpeed);
             m_animator.SetBool("Moving", true);
-            m_animator.SetFloat("Velocity X", Mathf.Abs(m_rigidbody.velocity.x));
-            m_animator.SetFloat("Velocity Z", Mathf.Abs(m_rigidbody.velocity.z));
+
+            Vector3 forwardVel = transform.InverseTransformVector(m_rigidbody.velocity); // Gets the velocity in the forward direction
+            m_animator.SetFloat("Velocity X", forwardVel.x / m_strafeSpeed);
+            m_animator.SetFloat("Velocity Z", forwardVel.z / m_movementSpeed);
         }
         else
         {
+            m_isStrafing = false;
             m_rigidbody.velocity = Vector3.zero;
             m_animator.SetBool("Moving", false);
         }
+        m_animator.SetBool("Strafing", m_isStrafing);
     }
 
     public void Damage(int amount)
