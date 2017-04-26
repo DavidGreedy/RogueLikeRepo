@@ -18,6 +18,9 @@ public class CharacterBehaviour : SolidMonoBehaviour
     private Team m_team;
 
     [SerializeField]
+    private MeleeBehaviour m_meleeWeapon;
+
+    [SerializeField]
     private bool m_isMovementLocked;
 
     [SerializeField]
@@ -50,13 +53,10 @@ public class CharacterBehaviour : SolidMonoBehaviour
     [SerializeField]
     private LayerMask m_attackLayer;
 
-    [SerializeField]
     private InventoryBehaviour m_inventory;
 
-    [SerializeField]
     private Animator m_animator;
 
-    [SerializeField]
     private Rigidbody m_rigidbody;
 
     public WeaponBehaviour ActiveWeapon
@@ -147,12 +147,11 @@ public class CharacterBehaviour : SolidMonoBehaviour
 
     void Start()
     {
-        if (!m_health)
-        {
-            Debug.LogError(string.Format("No HealthBehaviour attached to {0}", gameObject.name));
-            gameObject.SetActive(false);
-            return;
-        }
+        m_health = GetComponent<HealthBehaviour>();
+        m_inventory = GetComponent<InventoryBehaviour>();
+        m_animator = GetComponent<Animator>();
+        m_rigidbody = GetComponent<Rigidbody>();
+
         m_health.OnDeath += Death;
 
         m_team = new Team();
@@ -209,7 +208,7 @@ public class CharacterBehaviour : SolidMonoBehaviour
 
     public void Damage(int amount)
     {
-        StartCoroutine(LockMovement(0f, 0.3f));
+        StartCoroutine(LockMovement(0f, 0.5f));
         m_health.Modify(-amount);
         Debug.Log(string.Format("{0} has been taken {1} hp damage", gameObject.name, amount));
         m_animator.SetTrigger("GetHit1Trigger");
@@ -254,25 +253,26 @@ public class CharacterBehaviour : SolidMonoBehaviour
 
     void Hit()
     {
-        RaycastHit hit;
-        Ray ray = new Ray(transform.position + Vector3.up, transform.forward);
-        Debug.DrawRay(ray.origin, ray.direction);
+        m_meleeWeapon.EnableDamage();
+        //RaycastHit hit;
+        //Ray ray = new Ray(transform.position + Vector3.up, transform.forward);
+        //Debug.DrawRay(ray.origin, ray.direction);
 
-        Physics.Raycast(ray, out hit, m_attackLayer);
+        //Physics.Raycast(ray, out hit, m_attackLayer);
 
-        if (hit.transform != null)
-        {
-            if (hit.distance < 0.7f)
-            {
-                print(string.Format("HIT: {0}", hit.collider.name));
-                CharacterBehaviour hitCharacter = hit.collider.GetComponent<CharacterBehaviour>();
+        //if (hit.transform != null)
+        //{
+        //    if (hit.distance < 0.7f)
+        //    {
+        //        print(string.Format("HIT: {0}", hit.collider.name));
+        //        CharacterBehaviour hitCharacter = hit.collider.GetComponent<CharacterBehaviour>();
 
-                if (hitCharacter)
-                {
-                    hitCharacter.Damage(40);
-                }
-            }
-        }
+        //        if (hitCharacter)
+        //        {
+        //            hitCharacter.Damage(40);
+        //        }
+        //    }
+        //}
     }
 
     void FootL()

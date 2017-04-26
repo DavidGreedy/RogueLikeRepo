@@ -42,7 +42,8 @@ public class MeleeWeaponBehaviour : WeaponBehaviour
     {
         //Debug.Log("Collision with " + other.gameObject.name);
 
-        if (!m_isActive) return;
+        if (!m_isActive)
+            return;
 
         CharacterBehaviour otherCharacter = other.gameObject.GetComponent<CharacterBehaviour>();
 

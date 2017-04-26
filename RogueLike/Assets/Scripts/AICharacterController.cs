@@ -6,26 +6,11 @@ public class AICharacterController : MonoBehaviour
     [SerializeField]
     private CharacterBehaviour m_targetCharacter;
 
-    [SerializeField]
     private CharacterBehaviour m_character;
 
     [SerializeField]
-    private float m_attackRange = 1.5f;
+    private AISettings m_behaviourSettings;
 
-    [SerializeField]
-    private float m_enterCombatRange = 3f;
-
-    [SerializeField]
-    private float m_exitCombatRange = 5f;
-
-    [SerializeField]
-    private float m_seekRange = 8f;
-
-    [SerializeField]
-    private float m_waitRange = 20f;
-
-
-    [SerializeField]
     private float m_remainingDistance;
 
     [SerializeField]
@@ -41,6 +26,7 @@ public class AICharacterController : MonoBehaviour
 
     private void Start()
     {
+        m_character = GetComponent<CharacterBehaviour>();
         m_combatState = CombatState.WAITING;
         m_path = new NavMeshPath();
         NavMesh.CalculatePath(transform.position, m_targetCharacter.transform.position, NavMesh.AllAreas, m_path);
@@ -81,11 +67,11 @@ public class AICharacterController : MonoBehaviour
                     {
                         m_character.MoveVector = targetVector.normalized;
 
-                        if (m_remainingDistance > m_waitRange)
+                        if (m_remainingDistance > m_behaviourSettings.WaitRange)
                         {
                             m_combatState = CombatState.WAITING;
                         }
-                        if (m_remainingDistance < m_enterCombatRange)
+                        if (m_remainingDistance < m_behaviourSettings.EnterCombatRange)
                         {
                             m_combatState = CombatState.COMBAT;
                         }
@@ -95,11 +81,11 @@ public class AICharacterController : MonoBehaviour
                     {
                         m_character.LookVector = targetVector.normalized;
                         m_character.MoveVector = targetVector;
-                        if (m_remainingDistance > m_exitCombatRange)
+                        if (m_remainingDistance > m_behaviourSettings.ExitCombatRange)
                         {
                             m_combatState = CombatState.SEEKING;
                         }
-                        if (m_remainingDistance < m_attackRange)
+                        if (m_remainingDistance < m_behaviourSettings.AttackRange)
                         {
                             m_character.Attack();
                         }
@@ -108,7 +94,7 @@ public class AICharacterController : MonoBehaviour
                     case CombatState.WAITING:
                     {
                         m_character.MoveVector = Vector3.zero;
-                        if (m_remainingDistance < m_seekRange)
+                        if (m_remainingDistance < m_behaviourSettings.SeekRange)
                         {
                             m_combatState = CombatState.SEEKING;
                         }
