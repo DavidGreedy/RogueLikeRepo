@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Xml.Serialization;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -14,7 +15,6 @@ public class LevelGenerator : MonoBehaviour
 
     private Graph.Edge[] spanningTree;
     private List<Pair<Room, Room>> connectedRooms;
-
 
     private List<Line> path;
     private List<Line> border;
@@ -44,13 +44,19 @@ public class LevelGenerator : MonoBehaviour
     private float doorSize;
 
     [SerializeField]
-    private bool isDone;
+    private bool m_isPhysicsComplete;
+
+    [SerializeField]
+    private bool m_isGenerationComplete;
+
+    private MeshFilter m_meshFilter;
 
     void Start()
     {
         Time.timeScale = 100;
         CreateRoomsInCircle();
-        OnPhysicsComplete += SelectRooms;
+        OnPhysicsComplete += RoomLogic;
+        m_meshFilter = GetComponent<MeshFilter>();
     }
 
     void CreateRoomsInCircle()
@@ -64,6 +70,21 @@ public class LevelGenerator : MonoBehaviour
             m_rooms.Add(new Room());
             m_rooms[i].Init(transform, randomPosition, new Vector2(Mathf.Max(NormalDistribution(2) * targetWidth * 2.0f, 3), Mathf.Max(NormalDistribution(2) * targetHeight * 2.0f, 3)));
         }
+    }
+
+
+    void RoomLogic()
+    {
+        SelectRooms();
+        GeneratePaths();
+
+        m_meshFilter.mesh = GenerateRoomMeshes();
+
+        foreach (Room room in m_rooms)
+        {
+            room.RemoveCollider();
+        }
+        m_isGenerationComplete = true;
     }
 
     float NormalDistribution(int samples)
@@ -199,13 +220,13 @@ public class LevelGenerator : MonoBehaviour
 
                 if (Random.value > 0.5f)
                 {
-                    start = r0.GetHorizontalTo(r1);
-                    end = r1.GetVerticalTo(r0);
+                    start = r0.GetHorizontalTo(r1, pathSize);
+                    end = r1.GetVerticalTo(r0, pathSize);
                 }
                 else
                 {
-                    start = r1.GetHorizontalTo(r0);
-                    end = r0.GetVerticalTo(r1);
+                    start = r1.GetHorizontalTo(r0, pathSize);
+                    end = r0.GetVerticalTo(r1, pathSize);
                 }
 
                 path.Add(start);
@@ -217,11 +238,83 @@ public class LevelGenerator : MonoBehaviour
         }
     }
 
+    private Mesh GenerateRoomMeshes()
+    {
+        Vector3[] vertices = new Vector3[m_selectedRooms.Count * 6 + (path.Count * 6)];
+        int[] indices = new int[m_selectedRooms.Count * 6 + (path.Count * 6)];
+
+        float xMin = 0, xMax = 0, yMin = 0, yMax = 0;
+
+        int index = 0;
+
+        for (int i = 0; i < m_selectedRooms.Count; i++)
+        {
+            xMin = m_selectedRooms[i].Rect.xMin;
+            xMax = m_selectedRooms[i].Rect.xMax;
+            yMin = m_selectedRooms[i].Rect.yMin;
+            yMax = m_selectedRooms[i].Rect.yMax;
+
+            vertices[index] = new Vector3(xMin, 0, yMin);
+            indices[index] = index++;
+            vertices[index] = new Vector3(xMin, 0, yMax);
+            indices[index] = index++;
+            vertices[index] = new Vector3(xMax, 0, yMax);
+            indices[index] = index++;
+            vertices[index] = new Vector3(xMax, 0, yMin);
+            indices[index] = index++;
+            vertices[index] = new Vector3(xMin, 0, yMin);
+            indices[index] = index++;
+            vertices[index] = new Vector3(xMax, 0, yMax);
+            indices[index] = index++;
+        }
+
+        for (int i = 0; i < path.Count; i++)
+        {
+            Rect pathRect = new Rect
+            {
+                xMin = Mathf.Min(path[i].start.x, path[i].end.x),
+                xMax = Mathf.Max(path[i].start.x, path[i].end.x),
+                yMin = Mathf.Min(path[i].start.y, path[i].end.y),
+                yMax = Mathf.Max(path[i].start.y, path[i].end.y)
+            };
+
+            if (Math.Abs(path[i].start.y - path[i].end.y) < 0.01f)
+            {
+                pathRect.yMin = path[i].start.y - (m_pathSize / 2);
+                pathRect.yMax = path[i].start.y + (m_pathSize / 2);
+            }
+            else if (Math.Abs(path[i].start.x - path[i].end.x) < 0.01f)
+            {
+                pathRect.xMin = path[i].start.x - (m_pathSize / 2);
+                pathRect.xMax = path[i].start.x + (m_pathSize / 2);
+            }
+
+            vertices[index] = new Vector3(pathRect.xMin, 0, pathRect.yMin);
+            indices[index] = index++;
+            vertices[index] = new Vector3(pathRect.xMin, 0, pathRect.yMax);
+            indices[index] = index++;
+            vertices[index] = new Vector3(pathRect.xMax, 0, pathRect.yMax);
+            indices[index] = index++;
+            vertices[index] = new Vector3(pathRect.xMax, 0, pathRect.yMin);
+            indices[index] = index++;
+            vertices[index] = new Vector3(pathRect.xMin, 0, pathRect.yMin);
+            indices[index] = index++;
+            vertices[index] = new Vector3(pathRect.xMax, 0, pathRect.yMax);
+            indices[index] = index++;
+
+        }
+
+        Mesh mesh = new Mesh() { vertices = vertices, triangles = indices };
+
+        mesh.RecalculateNormals();
+
+        return mesh;
+    }
     public event Action OnPhysicsComplete;
 
     private void Update()
     {
-        if (isDone)
+        if (m_isPhysicsComplete)
         {
             //for (int i = 0; i < m_rooms.Count; i++)
             //{
@@ -232,7 +325,7 @@ public class LevelGenerator : MonoBehaviour
             //}
         }
 
-        if (!isDone)
+        if (!m_isPhysicsComplete)
         {
             foreach (Room Room in m_rooms)
             {
@@ -249,7 +342,7 @@ public class LevelGenerator : MonoBehaviour
             {
                 Destroy(Room.rigidbody);
             }
-            isDone = true;
+            m_isPhysicsComplete = true;
 
             if (OnPhysicsComplete != null)
             {
@@ -284,13 +377,17 @@ public class LevelGenerator : MonoBehaviour
 
     private void OnDrawGizmos()
     {
+        if (m_isGenerationComplete)
+        {
+            return;
+        }
         if (m_rooms != null)
         {
             //foreach (Room Room in m_rooms)
             //{
             //    DrawRect(Room.Rect, Color.clear, Color.white);
             //}
-            DrawRect(GetBounds(), Color.clear, isDone ? Color.green : Color.red);
+            DrawRect(GetBounds(), Color.clear, m_isPhysicsComplete ? Color.green : Color.red);
         }
         if (m_selectedRooms != null)
         {
@@ -319,8 +416,6 @@ public class LevelGenerator : MonoBehaviour
                     yMin = Mathf.Min(path[i].start.y, path[i].end.y),
                     yMax = Mathf.Max(path[i].start.y, path[i].end.y)
                 };
-
-                pathRect.size = new Vector2(Mathf.Max(pathRect.size.x, m_pathSize), Mathf.Max(pathRect.size.y, m_pathSize));
 
                 if (Math.Abs(path[i].start.y - path[i].end.y) < 0.01f)
                 {
@@ -578,6 +673,11 @@ public class Line
     public Vector2 start;
     public Vector2 end;
 
+    public enum Orientation
+    {
+        Horizontal, Vertical
+    }
+
     public Line(Vector2 start, Vector2 end)
     {
         this.start = start;
@@ -639,18 +739,32 @@ public class Room
         gameObject.name = collider.size.ToString();
     }
 
-    public Line GetHorizontalTo(Room other)
+    public Line GetHorizontalTo(Room other, float halfPathSize)
     {
-        return new Line(
-            new Vector2(other.Position.x > Position.x ? Rect.xMax : Rect.xMin, Position.y),
-            new Vector2(other.Position.x, Position.y));
+        if (other.Position.x > Position.x)
+        {
+            return new Line(new Vector2(Rect.xMax, Position.y), new Vector2(other.Position.x - halfPathSize, Position.y));
+        }
+        else
+        {
+            return new Line(new Vector2(Rect.xMin, Position.y), new Vector2(other.Position.x + halfPathSize, Position.y));
+        }
     }
 
-    public Line GetVerticalTo(Room other)
+    public Line GetVerticalTo(Room other, float halfPathSize)
     {
-        return
-            new Line(
-                new Vector2(Position.x, other.Position.y > Position.y ? Rect.yMax : Rect.yMin),
-                new Vector2(Position.x, other.Position.y));
+        if (other.Position.y > Position.y)
+        {
+            return new Line(new Vector2(Position.x, Rect.yMax), new Vector2(Position.x, other.Position.y - halfPathSize));
+        }
+        else
+        {
+            return new Line(new Vector2(Position.x, Rect.yMin), new Vector2(Position.x, other.Position.y + halfPathSize));
+        }
+    }
+
+    public void RemoveCollider()
+    {
+        GameObject.Destroy(collider);
     }
 }
