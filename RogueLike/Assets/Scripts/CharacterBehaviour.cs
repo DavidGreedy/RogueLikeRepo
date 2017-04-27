@@ -188,8 +188,17 @@ public class CharacterBehaviour : SolidMonoBehaviour
             m_animator.SetBool("Moving", true);
 
             Vector3 forwardVel = transform.InverseTransformVector(m_rigidbody.velocity); // Gets the velocity in the forward direction
-            m_animator.SetFloat("Velocity X", forwardVel.x / m_strafeSpeed);
-            m_animator.SetFloat("Velocity Z", forwardVel.z / m_movementSpeed);
+
+            if (m_isStrafing)
+            {
+                m_animator.SetFloat("Velocity X", forwardVel.x / m_strafeSpeed);
+                m_animator.SetFloat("Velocity Z", forwardVel.z / m_strafeSpeed);
+            }
+            else
+            {
+                m_animator.SetFloat("Velocity X", forwardVel.x / m_movementSpeed);
+                m_animator.SetFloat("Velocity Z", forwardVel.z / m_movementSpeed);
+            }
         }
         else
         {
