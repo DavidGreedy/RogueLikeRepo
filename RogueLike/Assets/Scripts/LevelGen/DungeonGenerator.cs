@@ -58,18 +58,13 @@ public class DungeonGenerator : MonoBehaviour
     {
         Box mapBox = new Box(0, 0, (int)m_width, (int)m_height);
 
-        //m_nextRoom = CreateRandomRoom();
-
-        bool mapContainsRoom = false;
-        bool roomOk = false;
-
         int index = 0;
 
         while (index < 1000)
         {
             m_nextRoom = CreateRandomRoom();
-            mapContainsRoom = mapBox.Contains(m_nextRoom);
-            roomOk = CheckRoomPlacement(m_nextRoom, m_rooms);
+            bool mapContainsRoom = mapBox.Contains(m_nextRoom);
+            bool roomOk = CheckRoomPlacement(m_nextRoom, m_rooms);
 
             index = 0;
             while (!mapContainsRoom || !roomOk)
@@ -121,16 +116,16 @@ public class DungeonGenerator : MonoBehaviour
     {
         //TODO: Space the corridors 1 cell away from each other
         //TODO: Unwind the corridors to create a MST
-        int xPos = 0, yPos = 0;
 
-        Stack<Pair<int, int>> junctions = new Stack<Pair<int, int>>();
+        Cell currentCell = RandomCell();
 
-        Tree<Pair<int, int>> maze =
-            new Tree<Pair<int, int>>(new Node<Pair<int, int>>(new Pair<int, int>(xPos, yPos), null));
+        Stack<Cell> cellStack = new Stack<Cell>();
+
+        Tree<Cell> maze = new Tree<Cell>(new Node<Cell>(currentCell, null));
 
         //path.Add(new Line(xPos, yPos, 1, 1));
 
-        junctions.Push(new Pair<int, int>(xPos, yPos));
+        cellStack.Push(currentCell);
 
         int checkDir = 0;
         int result = 0;
@@ -138,59 +133,66 @@ public class DungeonGenerator : MonoBehaviour
         int prevDir = 1;
 
         print("BEGIN");
-        while (junctions.Count > 0)
+        while (cellStack.Count > 0)
         {
-            result = 0;
-            if (yPos < m_height - 1 && m_map[xPos, yPos + 1] == CellState.EMPTY)
-            {
-                result |= (1 << 0); // N
-            }
-
-            if (xPos < m_width - 1 && m_map[xPos + 1, yPos] == CellState.EMPTY)
-            {
-                result |= (1 << 1); // E
-            }
-
-            if (yPos > 1 && m_map[xPos, yPos - 1] == CellState.EMPTY)
-            {
-                result |= (1 << 2); // S
-            }
-
-            if (xPos > 1 && m_map[xPos - 1, yPos] == CellState.EMPTY)
-            {
-                result |= (1 << 3); // W
-            }
+            result = CheckAdjacentMatches(currentCell.x, currentCell.y, CellState.EMPTY);
             if (result == 0) // if there are no free adjacent cells, need to backtrack
             {
-                Pair<int, int> junction = junctions.Pop();
-                xPos = junction.First;
-                yPos = junction.Second;
+                Cell junction = cellStack.Pop();
+                currentCell.x = junction.x;
+                currentCell.y = junction.y;
             }
             else // Continue path to free adjacent cell
             {
-                Pair<int, int> nextCell;
-                int changeDir = prevDir;
+                Cell nextCell = GetRandomCell(currentCell.x, currentCell.y, result, ref prevDir);
 
-                nextCell = GetRandomCell(xPos, yPos, result, ref prevDir);
-
-                //if (changeDir != prevDir)
+                if ((result & (result - 1)) != 0) // if there is only one neighbour
                 {
-                    junctions.Push(new Pair<int, int>(xPos, yPos));
+                    cellStack.Push(new Cell(currentCell.x, currentCell.y));
+                }
+                else // there is more than one neighbour so we need to add a new node to the tree
+                {
+
                 }
 
-                path.Add(new Line(new Vector2(xPos, yPos), new Vector2(nextCell.First, nextCell.Second)));
+                path.Add(new Line(currentCell.Vector2 + (Vector2.one * 0.5f), nextCell.Vector2 + (Vector2.one * 0.5f)));
 
-                xPos = nextCell.First;
-                yPos = nextCell.Second;
+                currentCell.x = nextCell.x;
+                currentCell.y = nextCell.y;
 
-
-                m_map[xPos, yPos] = CellState.CORRIDOR;
+                m_map[currentCell.x, currentCell.y] = CellState.CORRIDOR;
             }
         }
         yield return new WaitForSeconds(0.001f);
     }
 
-    Pair<int, int> GetRandomCell(int x, int y, int result, ref int dir)
+    int CheckAdjacentMatches(int x, int y, CellState matchState)
+    {
+        int result = 0;
+
+        if (y < m_height - 1 && m_map[x, y + 1] == matchState)
+        {
+            result |= (1 << 0); // N
+        }
+
+        if (x < m_width - 1 && m_map[x + 1, y] == matchState)
+        {
+            result |= (1 << 1); // E
+        }
+
+        if (y > 1 && m_map[x, y - 1] == matchState)
+        {
+            result |= (1 << 2); // S
+        }
+
+        if (x > 1 && m_map[x - 1, y] == matchState)
+        {
+            result |= (1 << 3); // W
+        }
+        return result;
+    }
+
+    Cell GetRandomCell(int x, int y, int result, ref int dir)
     {
         int randCell = 0;
         List<int> setBits = new List<int>();
@@ -212,7 +214,7 @@ public class DungeonGenerator : MonoBehaviour
             setBits.Add(3);
         }
 
-        if (setBits.Contains(dir) && Random.value < 0.65f)
+        if (setBits.Contains(dir) && Random.value < 0.85f)
         {
             randCell = dir;
         }
@@ -224,43 +226,51 @@ public class DungeonGenerator : MonoBehaviour
         dir = randCell;
         if (randCell == 0)
         {
-            return new Pair<int, int>(x, y + 1);
+            return new Cell(x, y + 1);
         }
         if (randCell == 1)
         {
-            return new Pair<int, int>(x + 1, y);
+            return new Cell(x + 1, y);
         }
         if (randCell == 2)
         {
-            return new Pair<int, int>(x, y - 1);
+            return new Cell(x, y - 1);
         }
         if (randCell == 3)
         {
-            return new Pair<int, int>(x - 1, y);
+            return new Cell(x - 1, y);
         }
         return null;
     }
 
-    int CheckPosition(int x, int y, int dir)
+    Cell RandomCell()
     {
-        int result = 0;
-        if ((dir >> 0 & 1) == 1)
+        bool pointOk = false;
+
+        int x = 0;
+        int y = 0;
+
+        while (!pointOk)
         {
-            result |= m_map[x, y - 1] == CellState.EMPTY ? 0 : 1 << 1; // N
+            x = (int)Random.Range(0, m_width);
+            y = (int)Random.Range(0, m_height);
+
+            pointOk = CheckPoint(x, y, m_rooms);
         }
-        if ((dir >> 1 & 1) == 1)
+
+        return new Cell(x, y);
+    }
+
+    bool CheckPoint(int x, int y, List<Box> boxes)
+    {
+        for (int i = 0; i < boxes.Count; i++)
         {
-            result |= m_map[x + 1, y] == CellState.EMPTY ? 0 : 1 << 2; // E
+            if (boxes[i].Contains(x, y))
+            {
+                return false;
+            }
         }
-        if ((dir >> 2 & 1) == 1)
-        {
-            result |= m_map[x, y + 1] == CellState.EMPTY ? 0 : 1 << 3; // S
-        }
-        if ((dir >> 3 & 1) == 1)
-        {
-            result |= m_map[x - 1, y] == CellState.EMPTY ? 0 : 1 << 4; // W
-        }
-        return result;
+        return true;
     }
 
     bool CheckRoomPlacement(Box box, List<Box> boxes)
@@ -372,9 +382,9 @@ public class DungeonGenerator : MonoBehaviour
         public bool Contains(Box other)
         {
             return (this.x < other.x
-                 && this.y < other.y
-                 && this.x + this.w > other.x + other.w
-                 && this.y + this.h > other.y + other.h);
+                    && this.y < other.y
+                    && this.x + this.w > other.x + other.w
+                    && this.y + this.h > other.y + other.h);
         }
 
         public bool Intersects(Box other)
@@ -404,5 +414,18 @@ public class DungeonGenerator : MonoBehaviour
             Debug.DrawLine(new Vector2(x + w, y), new Vector2(x, y), outline);
             Debug.DrawLine(new Vector2(x, y), new Vector2(x, y + h), outline);
         }
+    }
+
+    class Cell
+    {
+        public int x;
+        public int y;
+
+        public Cell(int x, int y)
+        {
+            this.x = x;
+            this.y = y;
+        }
+        public Vector2 Vector2 { get { return new Vector2(x, y); } }
     }
 }

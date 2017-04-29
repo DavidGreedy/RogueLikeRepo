@@ -41,6 +41,11 @@ public class Tree<T>
         rootNode.AllChildren(ref children);
         return children;
     }
+
+    public void Add(Node<T> node, Node<T> parent)
+    {
+
+    }
 }
 
 [System.Serializable]
@@ -82,7 +87,6 @@ public class Node<T>
     {
         this.data = data;
         this.parent = parent;
-
 
         if (parent != null)
         {
