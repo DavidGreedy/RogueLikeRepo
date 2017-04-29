@@ -131,7 +131,7 @@ public class DungeonGenerator : MonoBehaviour
 
         m_rootNode = RandomCellNode();
         Carve(m_rootNode, 0);
-
+        m_rootNode.RemoveDeadEnds();
         //for (int i = 0; i < m_leafNodes.Count; i++)
         //{
         //    Unwind(m_leafNodes[i]);
@@ -259,23 +259,7 @@ public class DungeonGenerator : MonoBehaviour
         }
     }
 
-    void Unwind(CellNode targetNode)
-    {
-        if (targetNode.parent != null && targetNode.parent.state == CellState.DOOR)
-        {
-            targetNode.parent.RemoveChildren();
-            Unwind(targetNode.parent);
-        }
-    }
 
-
-    void AddDoor()
-    {
-        for (int i = 0; i < m_rooms.Count; i++)
-        {
-
-        }
-    }
 
     bool CheckNode(CellNode node)
     {
@@ -845,6 +829,35 @@ public class DungeonGenerator : MonoBehaviour
                     }
                 }
             }
+        }
+
+        public bool RemoveDeadEnds()
+        {
+            bool save = false;
+            if (state == CellState.DOOR)
+            {
+                return true;
+            }
+            // Need to traverse the tree and remove any nodes that dont have any doors as children
+            if (!IsLeaf)
+            {
+                for (int i = 0; i < children.Length; i++)
+                {
+                    if (children[i] != null)
+                    {
+                        if (!children[i].RemoveDeadEnds())
+                        {
+                            children[i].RemoveChildren();
+                            children[i] = null;
+                        }
+                        else
+                        {
+                            save = true;
+                        }
+                    }
+                }
+            }
+            return save;
         }
     }
 }
