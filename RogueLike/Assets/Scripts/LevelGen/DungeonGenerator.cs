@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using JetBrains.Annotations;
 using UnityEditor;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -15,6 +17,10 @@ public class DungeonGenerator : MonoBehaviour
 
     private List<Line> path;
 
+    private List<CellNode> pathNodes;
+
+    private CellNode m_rootNode;
+
     private enum CellState
     {
         EMPTY = 0,
@@ -23,7 +29,7 @@ public class DungeonGenerator : MonoBehaviour
         CORRIDOR = 3
     }
 
-    private CellState[,] m_map;
+    private CellNode[,] m_map;
 
     private List<Box> m_rooms;
     private List<Box> m_failedRooms;
@@ -32,13 +38,13 @@ public class DungeonGenerator : MonoBehaviour
 
     void Start()
     {
-        m_map = new CellState[m_width, m_height];
+        m_map = new CellNode[m_width, m_height];
 
         for (int y = 0; y < m_height; y++)
         {
             for (int x = 0; x < m_width; x++)
             {
-                m_map[x, y] = CellState.EMPTY;
+                m_map[x, y] = new CellNode(x, y);
             }
         }
         path = new List<Line>();
@@ -51,7 +57,7 @@ public class DungeonGenerator : MonoBehaviour
         m_failedRooms = new List<Box>();
 
         StartCoroutine(PlaceRooms());
-        //StartCoroutine(BuildMaze());
+        //BuildMaze();
     }
 
     IEnumerator PlaceRooms()
@@ -84,7 +90,7 @@ public class DungeonGenerator : MonoBehaviour
         {
             AddRoomToMap(m_rooms[i]);
         }
-        StartCoroutine(BuildMaze());
+        BuildMaze();
         yield return null;
     }
 
@@ -112,87 +118,309 @@ public class DungeonGenerator : MonoBehaviour
         //}
     }
 
-    IEnumerator BuildMaze()
+    void BuildMaze()
     {
-        //TODO: Space the corridors 1 cell away from each other
+        //TODO: Space the corridors 1 cell away from each other (THIS IS DONE BY MULTIPLYING EVERYTHING BY TWO)
         //TODO: Unwind the corridors to create a MST
 
-        Cell currentCell = RandomCell();
+        m_rootNode = RandomCellNode();
+        Carve(m_rootNode, 0);
 
-        Stack<Cell> cellStack = new Stack<Cell>();
+        pathNodes = new List<CellNode>();
+        m_rootNode.AllChildren(ref pathNodes);
 
-        Tree<Cell> maze = new Tree<Cell>(new Node<Cell>(currentCell, null));
+        //while (cellNodeStack.Count > 0)
+        //{
+        //    currentNode.children = GetUnvisitedNeighbours(currentNode);
 
-        //path.Add(new Line(xPos, yPos, 1, 1));
+        //    int result = currentNode.CalculateNeigbours();
 
-        cellStack.Push(currentCell);
+        //    if (result == 0) // if there are no free adjacent cells, need to backtrack
+        //    {
+        //        CellNode junction = cellNodeStack.Pop();
+        //        currentNode = junction;
+        //    }
+        //    else // Continue path to free adjacent cell
+        //    {
+        //        //Need to set the children first;
 
-        int checkDir = 0;
-        int result = 0;
+        //        CellNode nextNode = currentNode.GetRandomChild(ref prevDir);
 
-        int prevDir = 1;
+        //        if ((result & (result - 1)) == 0) // if there is only one neighbour
+        //        {
 
-        print("BEGIN");
-        while (cellStack.Count > 0)
+        //        }
+        //        else // there is more than one neighbour so we need to add a new node to the tree
+        //        {
+        //            cellNodeStack.Push(currentNode);
+        //        }
+
+        //        path.Add(new Line(currentNode.cell.Vector2 + (Vector2.one * 0.5f), nextNode.cell.Vector2 + (Vector2.one * 0.5f)));
+
+        //        currentNode = nextNode;
+
+        //        m_map[currentNode.cell.x, currentNode.cell.y].state = CellState.CORRIDOR;
+        //    }
+        //}
+        //yield return new WaitForSeconds(0.001f);
+    }
+
+    //void Carve(ref CellNode targetNode, ref int prevDir, ref int escape)
+    //{
+    //    //if (escape > 100000)
+    //    //{
+    //    //    return;
+    //    //}
+    //    targetNode.children = GetUnvisitedNeighbours(targetNode);
+
+    //    targetNode.CalculateNeigbours();
+
+    //    if (targetNode.neighbours == 0) // if there are no free adjacent cells, need to backtrack
+    //    {
+    //        return;
+    //    }
+
+    //    CellNode nextNode = targetNode.GetRandomChild(ref prevDir);
+
+    //    path.Add(new Line(targetNode.cell.Vector2 + (Vector2.one * 0.5f), nextNode.cell.Vector2 + (Vector2.one * 0.5f)));
+
+    //    escape++;
+
+    //    m_map[targetNode.cell.x, targetNode.cell.y].state = CellState.CORRIDOR;
+
+    //    Carve(ref nextNode, ref prevDir, ref escape);
+    //}
+
+    void Carve(CellNode targetNode, int prevDir)
+    {
+        //ADD NODE
+        //IF HAS CHILDREN
+
+        //FOREACH CHILD THAT HASNT BEEN ADDED
+        //SELECT ONE CHILD AT RANDOM
+        //RECURSE
+
+        //WHEN NO CHILDREN ARE LEFT
+        //RETURN
+
+        targetNode.added = true;
+        targetNode.state = CellState.CORRIDOR;
+
+        CellNode[] possibleChildren = GetAvailableNeighbours(targetNode);
+        CellNode nextNode;
+        List<int> randomIndices = new List<int>();
+        int rand;
+        for (int i = 0; i < possibleChildren.Length; i++)
         {
-            result = CheckAdjacentMatches(currentCell.x, currentCell.y, CellState.EMPTY);
-            if (result == 0) // if there are no free adjacent cells, need to backtrack
+            if (CheckNode(possibleChildren[i]))
             {
-                Cell junction = cellStack.Pop();
-                currentCell.x = junction.x;
-                currentCell.y = junction.y;
-            }
-            else // Continue path to free adjacent cell
-            {
-                Cell nextCell = GetRandomCell(currentCell.x, currentCell.y, result, ref prevDir);
-
-                if ((result & (result - 1)) != 0) // if there is only one neighbour
-                {
-                    cellStack.Push(new Cell(currentCell.x, currentCell.y));
-                }
-                else // there is more than one neighbour so we need to add a new node to the tree
-                {
-
-                }
-
-                path.Add(new Line(currentCell.Vector2 + (Vector2.one * 0.5f), nextCell.Vector2 + (Vector2.one * 0.5f)));
-
-                currentCell.x = nextCell.x;
-                currentCell.y = nextCell.y;
-
-                m_map[currentCell.x, currentCell.y] = CellState.CORRIDOR;
+                randomIndices.Add(i);
             }
         }
-        yield return new WaitForSeconds(0.001f);
+
+        while (randomIndices.Count > 0)
+        {
+            rand = Random.value > 0.85 ? randomIndices[Random.Range(0, randomIndices.Count)] : prevDir;
+            randomIndices.Remove(rand);
+
+            nextNode = possibleChildren[rand];
+
+            if (CheckNode(nextNode))
+            {
+                targetNode.SetChild(rand, nextNode);
+                path.Add(new Line(targetNode.cell.Vector2, nextNode.cell.Vector2));
+
+                Carve(nextNode, rand);
+            }
+        }
+
+
+    }
+
+    bool CheckNode(CellNode node)
+    {
+        return node != null && !node.added && node.state == CellState.EMPTY;
+    }
+
+    //List<CellNode> GetRandom(CellNode[] possible, ref int dir)
+    //{
+    //    int randCell = -1;
+    //    List<int> setBits = new List<int>();
+
+    //    for (int i = 0; i < 4; i++)
+    //    {
+    //        if (possible[i] != null && !possible[i].added)
+    //        {
+    //            setBits.Add(i);
+    //        }
+    //    }
+
+    //    if (setBits.Contains(dir) && Random.value < 0.85f)
+    //    {
+    //        randCell = dir;
+    //    }
+    //    else
+    //    {
+    //        randCell = setBits[Random.Range(0, setBits.Count)];
+    //    }
+
+    //    dir = randCell;
+
+    //    return new Pair<CellNode, int>(possible[randCell], randCell);
+    //}
+
+    List<CellNode> GetNeighbours(int x, int y)
+    {
+        int result = 0;
+
+        List<CellNode> neighbours = new List<CellNode>();
+        if (y < m_height - 1)
+        {
+            result |= (1 << 0); // N
+            CellNode node = m_map[x, y + 1];
+
+            if (!node.visited)
+            {
+                neighbours.Add(node);
+                node.visited = true;
+            }
+        }
+
+        if (x < m_width - 1)
+        {
+            result |= (1 << 1); // E
+            CellNode node = m_map[x + 1, y];
+
+            if (!node.visited)
+            {
+                neighbours.Add(node);
+                node.visited = true;
+            }
+        }
+
+        if (y > 1)
+        {
+            result |= (1 << 2); // S
+            CellNode node = m_map[x, y - 1];
+
+            if (!node.visited)
+            {
+                neighbours.Add(node);
+                node.visited = true;
+            }
+        }
+
+        if (x > 1)
+        {
+            result |= (1 << 3); // W
+            CellNode node = m_map[x - 1, y];
+
+            if (!node.visited)
+            {
+                neighbours.Add(node);
+                node.visited = true;
+            }
+        }
+
+        //if ((result & 3) == 3)
+        //{
+        //    neighbours.Add(new Cell(x + 1, y + 1));
+        //}
+        //if ((result & 6) == 6)
+        //{
+        //    neighbours.Add(new Cell(x + 1, y - 1));
+        //}
+        //if ((result & 12) == 12)
+        //{
+        //    neighbours.Add(new Cell(x - 1, y - 1));
+        //}
+        //if ((result & 9) == 9)
+        //{
+        //    neighbours.Add(new Cell(x - 1, y + 1));
+        //}
+
+        return neighbours;
     }
 
     int CheckAdjacentMatches(int x, int y, CellState matchState)
     {
         int result = 0;
 
-        if (y < m_height - 1 && m_map[x, y + 1] == matchState)
+        if (y < m_height - 1 && m_map[x, y + 1].state == matchState)
         {
             result |= (1 << 0); // N
         }
 
-        if (x < m_width - 1 && m_map[x + 1, y] == matchState)
+        if (x < m_width - 1 && m_map[x + 1, y].state == matchState)
         {
             result |= (1 << 1); // E
         }
 
-        if (y > 1 && m_map[x, y - 1] == matchState)
+        if (y > 1 && m_map[x, y - 1].state == matchState)
         {
             result |= (1 << 2); // S
         }
 
-        if (x > 1 && m_map[x - 1, y] == matchState)
+        if (x > 1 && m_map[x - 1, y].state == matchState)
         {
             result |= (1 << 3); // W
         }
         return result;
     }
 
-    Cell GetRandomCell(int x, int y, int result, ref int dir)
+    int GetPossibleDirections(CellNode node)
+    {
+        int result = 0;
+        int x = node.cell.x, y = node.cell.y;
+
+        if (y < m_height - 1 && !m_map[x, y + 1].added)
+        {
+            result |= (1 << 0); // N
+        }
+
+        if (x < m_width - 1 && !m_map[x + 1, y].added)
+        {
+            result |= (1 << 1); // E
+        }
+
+        if (y > 1 && !m_map[x, y - 1].added)
+        {
+            result |= (1 << 2); // S
+        }
+
+        if (x > 1 && !m_map[x - 1, y].added)
+        {
+            result |= (1 << 3); // W
+        }
+        return result;
+    }
+
+    CellNode[] GetAvailableNeighbours(CellNode node)
+    {
+        CellNode[] neighbours = new CellNode[4];
+
+        int x = node.cell.x, y = node.cell.y;
+
+        if (y < m_height - 1)
+        {
+            neighbours[0] = m_map[x, y + 1];
+        }
+        if (x < m_width - 1)
+        {
+            neighbours[1] = m_map[x + 1, y];
+        }
+        if (y > 1)
+        {
+            neighbours[2] = m_map[x, y - 1];
+        }
+        if (x > 1)
+        {
+            neighbours[3] = m_map[x - 1, y];
+        }
+        return neighbours;
+    }
+
+    CellNode GetRandomCell(int x, int y, int result, ref int dir)
     {
         int randCell = 0;
         List<int> setBits = new List<int>();
@@ -226,24 +454,24 @@ public class DungeonGenerator : MonoBehaviour
         dir = randCell;
         if (randCell == 0)
         {
-            return new Cell(x, y + 1);
+            return m_map[x, y + 1];
         }
         if (randCell == 1)
         {
-            return new Cell(x + 1, y);
+            return m_map[x + 1, y];
         }
         if (randCell == 2)
         {
-            return new Cell(x, y - 1);
+            return m_map[x, y - 1];
         }
         if (randCell == 3)
         {
-            return new Cell(x - 1, y);
+            return m_map[x - 1, y];
         }
         return null;
     }
 
-    Cell RandomCell()
+    CellNode RandomCellNode()
     {
         bool pointOk = false;
 
@@ -258,7 +486,7 @@ public class DungeonGenerator : MonoBehaviour
             pointOk = CheckPoint(x, y, m_rooms);
         }
 
-        return new Cell(x, y);
+        return new CellNode(x, y);
     }
 
     bool CheckPoint(int x, int y, List<Box> boxes)
@@ -309,7 +537,7 @@ public class DungeonGenerator : MonoBehaviour
         {
             for (int i = x; i < x + w; i++)
             {
-                m_map[i, j] = CellState.ROOM;
+                m_map[i, j].state = CellState.ROOM;
             }
         }
     }
@@ -320,33 +548,65 @@ public class DungeonGenerator : MonoBehaviour
         {
             for (int i = room.x; i < room.x + room.w; i++)
             {
-                m_map[i, j] = CellState.ROOM;
+                m_map[i, j].state = CellState.ROOM;
             }
         }
     }
 
-    void DrawTile(int x, int y)
+    void DrawTile(int x, int y, Color fill)
     {
-        Color c = m_map[x, y] == CellState.ROOM ? Color.red : Color.blue;
-        Handles.DrawSolidRectangleWithOutline(new Rect(x, y, 1, 1), c, Color.clear);
+        Handles.DrawSolidRectangleWithOutline(new Rect(x, y, 1, 1), fill, Color.clear);
     }
 
     private void OnDrawGizmos()
     {
         if (Application.isPlaying)
         {
-            for (int y = 0; y < m_height; y++)
-            {
-                for (int x = 0; x < m_width; x++)
-                {
-                    if (m_map[x, y] == CellState.ROOM)
-                        DrawTile(x, y);
-                }
-            }
+            //for (int y = 0; y < m_height; y++)
+            //{
+            //    for (int x = 0; x < m_width; x++)
+            //    {
+            //        if (m_map[x, y].Second == CellState.ROOM)
+            //        {
+            //            //DrawTile(Mathf.FloorToInt(x), Mathf.FloorToInt(y), Color.red);
+            //            //DrawTile(Mathf.FloorToInt(x * 2 + 1), Mathf.FloorToInt(y * 2), Color.red);
+            //            //DrawTile(Mathf.FloorToInt(x * 2), Mathf.FloorToInt(y * 2 + 1), Color.red);
+            //            //DrawTile(Mathf.FloorToInt(x * 2 + 1), Mathf.FloorToInt(y * 2 + 1), Color.red);
+            //
+            //        }
+            //
+            //        if (m_map[x, y].Second == CellState.WALL)
+            //            //DrawTile(x * 2, y * 2, Color.green);
+            //
+            //            //if (m_map[x, y].Second == CellState.CORRIDOR)
+            //            //DrawTile(x * 2, y * 2, Color.blue);
+            //    }
+            //}
 
-            for (int i = 0; i < path.Count; i++)
+            for (int i = 0; i < m_rooms.Count; i++)
             {
-                Gizmos.DrawLine(path[i].start, path[i].end);
+                Rect r = new Rect(m_rooms[i].x, m_rooms[i].y, m_rooms[i].w, m_rooms[i].h);
+                Handles.DrawSolidRectangleWithOutline(new Rect(r), Color.red, Color.red);
+            }
+            //for (int i = 0; i < path.Count; i++)
+            //{
+            //    //DrawTile(Mathf.FloorToInt(path[i].start.x ), Mathf.FloorToInt(path[i].start.y * 2), Color.blue);
+            //    //DrawTile(Mathf.FloorToInt(path[i].end.x ), Mathf.FloorToInt(path[i].end.y * 2), Color.blue);
+            //    //DrawTile(Mathf.FloorToInt(Mathf.Lerp(path[i].start.x * 2, path[i].end.x * 2, 0.5f)), Mathf.FloorToInt(Mathf.Lerp(path[i].start.y * 2, path[i].end.y * 2, 0.5f)), Color.blue);
+
+            //    Gizmos.DrawLine(path[i].start, path[i].end);
+            //}
+
+            Gizmos.color = Color.green;
+            if (pathNodes != null)
+            {
+                for (int i = 0; i < pathNodes.Count; i++)
+                {
+                    if (pathNodes[i].parent != null)
+                    {
+                        Gizmos.DrawLine(pathNodes[i].cell.Vector2, pathNodes[i].parent.cell.Vector2);
+                    }
+                }
             }
         }
     }
@@ -427,5 +687,85 @@ public class DungeonGenerator : MonoBehaviour
             this.y = y;
         }
         public Vector2 Vector2 { get { return new Vector2(x, y); } }
+    }
+
+    class CellNode
+    {
+        public Cell cell;
+        public CellState state;
+        public bool visited;
+        public bool added;
+
+        public CellNode parent;
+
+        private CellNode[] children;
+
+        public int neighbours;
+
+        public CellNode(int x, int y)
+        {
+            cell = new Cell(x, y);
+            state = CellState.EMPTY;
+            visited = false;
+            children = new CellNode[4];
+            neighbours = 0;
+        }
+
+        public bool IsLeaf
+        {
+            get { return children == null; }
+        }
+
+        public void SetChild(int index, CellNode child)
+        {
+            if (IsLeaf)
+            { children = new CellNode[4]; }
+
+            children[index] = child;
+            child.parent = this;
+        }
+
+        public int CalculateNeigbours()
+        {
+            neighbours = 0;
+            for (int i = 0; i < 4; i++)
+            {
+                if (children[i] != null)
+                {
+                    neighbours |= (1 << i); // N
+                }
+            }
+            return neighbours;
+        }
+
+        public List<CellNode> Children()
+        {
+            List<CellNode> ch = new List<CellNode>();
+            for (int i = 0; i < 4; i++)
+            {
+                if (children[i] != null)
+                {
+                    ch.Add(children[i]);
+                }
+            }
+
+            return ch;
+        }
+
+        public void AllChildren(ref List<CellNode> allChildren)
+        {
+            if (!IsLeaf)
+            {
+
+                for (int i = 0; i < children.Length; i++)
+                {
+                    if (children[i] != null)
+                    {
+                        allChildren.Add(children[i]);
+                        children[i].AllChildren(ref allChildren);
+                    }
+                }
+            }
+        }
     }
 }

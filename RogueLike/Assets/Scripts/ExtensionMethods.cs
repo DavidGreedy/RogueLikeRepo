@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public static class ExtensionMethods
@@ -12,5 +13,11 @@ public static class ExtensionMethods
     public static Line Border(this Rect rect, Rect other)
     {
         return new Line(new Vector2(Mathf.Min(rect.xMax, other.xMax), Mathf.Min(rect.yMax, other.yMax)), new Vector2(Mathf.Max(rect.xMin, other.xMin), Mathf.Max(rect.yMin, other.yMin)));
+    }
+
+    public static IEnumerable<T> Shuffle<T>(this IEnumerable<T> source)
+    {
+        System.Random rnd = new System.Random();
+        return source.OrderBy<T, int>((item) => rnd.Next());
     }
 }
