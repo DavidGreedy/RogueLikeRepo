@@ -5,6 +5,7 @@ using System.Linq;
 using JetBrains.Annotations;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Assertions.Must;
 using Random = UnityEngine.Random;
 
 public class DungeonGenerator : MonoBehaviour
@@ -21,12 +22,14 @@ public class DungeonGenerator : MonoBehaviour
 
     private CellNode m_rootNode;
 
+    private List<CellNode> m_leafNodes;
     private enum CellState
     {
         EMPTY = 0,
         WALL = 1,
         ROOM = 2,
-        CORRIDOR = 3
+        CORRIDOR = 3,
+        DOOR = 4
     }
 
     private CellNode[,] m_map;
@@ -38,6 +41,7 @@ public class DungeonGenerator : MonoBehaviour
 
     void Start()
     {
+        DateTime startTime = DateTime.Now;
         m_map = new CellNode[m_width, m_height];
 
         for (int y = 0; y < m_height; y++)
@@ -56,11 +60,13 @@ public class DungeonGenerator : MonoBehaviour
         m_rooms = new List<Box>();
         m_failedRooms = new List<Box>();
 
-        StartCoroutine(PlaceRooms());
-        //BuildMaze();
+        PlaceRooms();
+        BuildMaze();
+
+        print(DateTime.Now - startTime);
     }
 
-    IEnumerator PlaceRooms()
+    void PlaceRooms()
     {
         Box mapBox = new Box(0, 0, (int)m_width, (int)m_height);
 
@@ -90,8 +96,6 @@ public class DungeonGenerator : MonoBehaviour
         {
             AddRoomToMap(m_rooms[i]);
         }
-        BuildMaze();
-        yield return null;
     }
 
     void Update()
@@ -123,11 +127,22 @@ public class DungeonGenerator : MonoBehaviour
         //TODO: Space the corridors 1 cell away from each other (THIS IS DONE BY MULTIPLYING EVERYTHING BY TWO)
         //TODO: Unwind the corridors to create a MST
 
+        m_leafNodes = new List<CellNode>();
+
         m_rootNode = RandomCellNode();
         Carve(m_rootNode, 0);
 
+        //for (int i = 0; i < m_leafNodes.Count; i++)
+        //{
+        //    Unwind(m_leafNodes[i]);
+        //}
+
         pathNodes = new List<CellNode>();
         m_rootNode.AllChildren(ref pathNodes);
+
+        print(m_leafNodes.Count);
+
+        //m_rootNode.LeafNodes(ref m_leafNodes);
 
         //while (cellNodeStack.Count > 0)
         //{
@@ -204,12 +219,15 @@ public class DungeonGenerator : MonoBehaviour
         //RETURN
 
         targetNode.added = true;
-        targetNode.state = CellState.CORRIDOR;
+        if (targetNode.state != CellState.DOOR)
+        {
+            targetNode.state = CellState.CORRIDOR;
+        }
 
         CellNode[] possibleChildren = GetAvailableNeighbours(targetNode);
-        CellNode nextNode;
+
         List<int> randomIndices = new List<int>();
-        int rand;
+
         for (int i = 0; i < possibleChildren.Length; i++)
         {
             if (CheckNode(possibleChildren[i]))
@@ -218,28 +236,50 @@ public class DungeonGenerator : MonoBehaviour
             }
         }
 
+        if (randomIndices.Count == 0)
+        {
+            m_leafNodes.Add(targetNode);
+            return;
+        }
+
         while (randomIndices.Count > 0)
         {
-            rand = Random.value > 0.85 ? randomIndices[Random.Range(0, randomIndices.Count)] : prevDir;
+            int rand = Random.value > 0.85 ? randomIndices[Random.Range(0, randomIndices.Count)] : prevDir;
             randomIndices.Remove(rand);
 
-            nextNode = possibleChildren[rand];
+            CellNode nextNode = possibleChildren[rand];
 
             if (CheckNode(nextNode))
             {
-                targetNode.SetChild(rand, nextNode);
-                path.Add(new Line(targetNode.cell.Vector2, nextNode.cell.Vector2));
+                targetNode.AddChild(rand, nextNode);
+                //path.Add(new Line(targetNode.cell.Vector2, nextNode.cell.Vector2));
 
                 Carve(nextNode, rand);
             }
         }
+    }
+
+    void Unwind(CellNode targetNode)
+    {
+        if (targetNode.parent != null && targetNode.parent.state == CellState.DOOR)
+        {
+            targetNode.parent.RemoveChildren();
+            Unwind(targetNode.parent);
+        }
+    }
 
 
+    void AddDoor()
+    {
+        for (int i = 0; i < m_rooms.Count; i++)
+        {
+
+        }
     }
 
     bool CheckNode(CellNode node)
     {
-        return node != null && !node.added && node.state == CellState.EMPTY;
+        return node != null && !node.added && (node.state == CellState.EMPTY || node.state == CellState.DOOR);
     }
 
     //List<CellNode> GetRandom(CellNode[] possible, ref int dir)
@@ -409,11 +449,11 @@ public class DungeonGenerator : MonoBehaviour
         {
             neighbours[1] = m_map[x + 1, y];
         }
-        if (y > 1)
+        if (y > 0)
         {
             neighbours[2] = m_map[x, y - 1];
         }
-        if (x > 1)
+        if (x > 0)
         {
             neighbours[3] = m_map[x - 1, y];
         }
@@ -551,6 +591,26 @@ public class DungeonGenerator : MonoBehaviour
                 m_map[i, j].state = CellState.ROOM;
             }
         }
+
+        float r = Random.value;
+        int doorx = Random.Range(room.x + 1, room.x + room.w - 1);
+        int doory = Random.Range(room.y + 1, room.y + room.h - 1);
+        if (r > 0.75f)
+        {
+            m_map[doorx, room.y].state = CellState.DOOR;
+        }
+        else if (r > 0.5f)
+        {
+            m_map[room.x, doory].state = CellState.DOOR;
+        }
+        else if (r > 0.25f)
+        {
+            m_map[doorx, room.y + room.h - 1].state = CellState.DOOR;
+        }
+        else
+        {
+            m_map[room.x + room.w - 1, doory].state = CellState.DOOR;
+        }
     }
 
     void DrawTile(int x, int y, Color fill)
@@ -588,6 +648,7 @@ public class DungeonGenerator : MonoBehaviour
                 Rect r = new Rect(m_rooms[i].x, m_rooms[i].y, m_rooms[i].w, m_rooms[i].h);
                 Handles.DrawSolidRectangleWithOutline(new Rect(r), Color.red, Color.red);
             }
+
             //for (int i = 0; i < path.Count; i++)
             //{
             //    //DrawTile(Mathf.FloorToInt(path[i].start.x ), Mathf.FloorToInt(path[i].start.y * 2), Color.blue);
@@ -604,10 +665,32 @@ public class DungeonGenerator : MonoBehaviour
                 {
                     if (pathNodes[i].parent != null)
                     {
-                        Gizmos.DrawLine(pathNodes[i].cell.Vector2, pathNodes[i].parent.cell.Vector2);
+                        Gizmos.DrawLine(pathNodes[i].cell.Vector2 + Vector2.one * 0.5f, pathNodes[i].parent.cell.Vector2 + Vector2.one * 0.5f);
                     }
                 }
             }
+
+            for (int y = 0; y < m_height; y++)
+            {
+                for (int x = 0; x < m_width; x++)
+                {
+                    if (m_map[x, y].state == CellState.DOOR)
+                    {
+                        DrawTile(Mathf.FloorToInt(x), Mathf.FloorToInt(y), Color.black);
+                        //DrawTile(Mathf.FloorToInt(x * 2 + 1), Mathf.FloorToInt(y * 2), Color.red);
+                        //DrawTile(Mathf.FloorToInt(x * 2), Mathf.FloorToInt(y * 2 + 1), Color.red);
+                        //DrawTile(Mathf.FloorToInt(x * 2 + 1), Mathf.FloorToInt(y * 2 + 1), Color.red);
+
+                    }
+                }
+            }
+            //if (m_leafNodes != null)
+            //{
+            //    for (int i = 0; i < m_leafNodes.Count; i++)
+            //    {
+            //        Gizmos.DrawRay(m_leafNodes[i].cell.Vector2 + Vector2.one * 0.5f, Vector3.forward);
+            //    }
+            //}
         }
     }
 
@@ -647,7 +730,7 @@ public class DungeonGenerator : MonoBehaviour
                     && this.y + this.h > other.y + other.h);
         }
 
-        public bool Intersects(Box other)
+        public bool Intersects(Box other) // NOTE: Make Equals than to allow rooms to touch
         {
             return !(this.x + this.w < other.x ||
                      this.x > other.x + other.w ||
@@ -696,6 +779,8 @@ public class DungeonGenerator : MonoBehaviour
         public bool visited;
         public bool added;
 
+        public int childCount;
+
         public CellNode parent;
 
         private CellNode[] children;
@@ -709,6 +794,7 @@ public class DungeonGenerator : MonoBehaviour
             visited = false;
             children = new CellNode[4];
             neighbours = 0;
+            childCount = 0;
         }
 
         public bool IsLeaf
@@ -716,47 +802,40 @@ public class DungeonGenerator : MonoBehaviour
             get { return children == null; }
         }
 
-        public void SetChild(int index, CellNode child)
+        public void AddChild(int index, CellNode child)
         {
             if (IsLeaf)
-            { children = new CellNode[4]; }
+            {
+                children = new CellNode[4];
+            }
 
             children[index] = child;
             child.parent = this;
+            childCount++;
         }
 
-        public int CalculateNeigbours()
+        public void RemoveChildren()
         {
-            neighbours = 0;
+            if (IsLeaf)
+            {
+                return;
+            }
             for (int i = 0; i < 4; i++)
             {
                 if (children[i] != null)
                 {
-                    neighbours |= (1 << i); // N
+                    children[i].RemoveChildren();
+                    children[i] = null;
                 }
             }
-            return neighbours;
-        }
-
-        public List<CellNode> Children()
-        {
-            List<CellNode> ch = new List<CellNode>();
-            for (int i = 0; i < 4; i++)
-            {
-                if (children[i] != null)
-                {
-                    ch.Add(children[i]);
-                }
-            }
-
-            return ch;
+            children = null;
+            childCount = 0;
         }
 
         public void AllChildren(ref List<CellNode> allChildren)
         {
             if (!IsLeaf)
             {
-
                 for (int i = 0; i < children.Length; i++)
                 {
                     if (children[i] != null)
