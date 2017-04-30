@@ -576,9 +576,19 @@ public class DungeonGenerator : MonoBehaviour
             }
         }
 
-        float r = Random.value;
+        AddRandomDoor(room);
+        if (room.w * room.h > 100 || Random.value > 0.9f)
+        {
+            AddRandomDoor(room);
+        }
+    }
+
+    void AddRandomDoor(Box room)
+    {
         int doorx = Random.Range(room.x + 1, room.x + room.w - 1);
         int doory = Random.Range(room.y + 1, room.y + room.h - 1);
+
+        float r = Random.value;
         if (r > 0.75f)
         {
             m_map[doorx, room.y].state = CellState.DOOR;
