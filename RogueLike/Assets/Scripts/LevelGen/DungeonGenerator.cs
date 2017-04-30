@@ -1,11 +1,8 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using JetBrains.Annotations;
+using System.IO;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Assertions.Must;
 using Random = UnityEngine.Random;
 
 public class DungeonGenerator : MonoBehaviour
@@ -23,6 +20,7 @@ public class DungeonGenerator : MonoBehaviour
     private CellNode m_rootNode;
 
     private List<CellNode> m_leafNodes;
+
     private enum CellState
     {
         EMPTY = 0,
@@ -41,29 +39,31 @@ public class DungeonGenerator : MonoBehaviour
 
     void Start()
     {
-        DateTime startTime = DateTime.Now;
-        m_map = new CellNode[m_width, m_height];
+        //DateTime startTime = DateTime.Now;
+        //m_map = new CellNode[m_width, m_height];
 
-        for (int y = 0; y < m_height; y++)
-        {
-            for (int x = 0; x < m_width; x++)
-            {
-                m_map[x, y] = new CellNode(x, y);
-            }
-        }
-        path = new List<Line>();
+        //for (int y = 0; y < m_height; y++)
+        //{
+        //    for (int x = 0; x < m_width; x++)
+        //    {
+        //        m_map[x, y] = new CellNode(x, y);
+        //    }
+        //}
+        //path = new List<Line>();
 
-        int index = 0;
+        //int index = 0;
 
-        bool placementGood = false;
+        //bool placementGood = false;
 
-        m_rooms = new List<Box>();
-        m_failedRooms = new List<Box>();
+        //m_rooms = new List<Box>();
+        //m_failedRooms = new List<Box>();
 
-        PlaceRooms();
-        BuildMaze();
+        //PlaceRooms();
+        //BuildMaze();
 
-        print(DateTime.Now - startTime);
+        //print(DateTime.Now - startTime);
+
+        LoadMap();
     }
 
     void PlaceRooms()
@@ -141,6 +141,8 @@ public class DungeonGenerator : MonoBehaviour
         m_rootNode.AllChildren(ref pathNodes);
 
         print(m_leafNodes.Count);
+
+        ExportMap();
 
         //m_rootNode.LeafNodes(ref m_leafNodes);
 
@@ -607,6 +609,55 @@ public class DungeonGenerator : MonoBehaviour
         }
     }
 
+    void ExportMap()
+    {
+        StreamWriter sw = new StreamWriter("MAP.txt");
+        sw.WriteLine(m_width);
+        sw.WriteLine(m_height);
+        string[] line = new string[m_width];
+
+        for (int y = (int)m_height - 1; y >= 0; y--)
+        {
+            for (int x = 0; x < m_width; x++)
+            {
+                line[x] = ((int)m_map[x, y].state).ToString();
+            }
+            sw.WriteLine(String.Join(" ", line));
+        }
+        sw.Close();
+    }
+
+    void LoadMap()
+    {
+        StreamReader sr = new StreamReader("MAP.txt");
+
+        m_width = (uint)int.Parse(sr.ReadLine());
+        m_height = (uint)int.Parse(sr.ReadLine());
+        m_map = new CellNode[m_width, m_height];
+
+        string[] line = new string[m_width];
+        try
+        {
+            for (int y = (int)m_height - 1; y >= 0; y--)
+            {
+                line = sr.ReadLine().Split(' ');
+                for (int x = 0; x < m_width; x++)
+                {
+                    m_map[x, y] = new CellNode(x, y);
+                    int state = int.Parse(line[x]);
+                    m_map[x, y].state = (CellState)state;
+                }
+            }
+            sr.Close();
+
+        }
+        catch (Exception)
+        {
+
+            throw;
+        }
+    }
+
     void DrawTile(int x, int y, Color fill)
     {
         Handles.DrawSolidRectangleWithOutline(new Rect(x, y, 1, 1), fill, Color.clear);
@@ -616,32 +667,29 @@ public class DungeonGenerator : MonoBehaviour
     {
         if (Application.isPlaying)
         {
-            //for (int y = 0; y < m_height; y++)
-            //{
-            //    for (int x = 0; x < m_width; x++)
-            //    {
-            //        if (m_map[x, y].Second == CellState.ROOM)
-            //        {
-            //            //DrawTile(Mathf.FloorToInt(x), Mathf.FloorToInt(y), Color.red);
-            //            //DrawTile(Mathf.FloorToInt(x * 2 + 1), Mathf.FloorToInt(y * 2), Color.red);
-            //            //DrawTile(Mathf.FloorToInt(x * 2), Mathf.FloorToInt(y * 2 + 1), Color.red);
-            //            //DrawTile(Mathf.FloorToInt(x * 2 + 1), Mathf.FloorToInt(y * 2 + 1), Color.red);
-            //
-            //        }
-            //
-            //        if (m_map[x, y].Second == CellState.WALL)
-            //            //DrawTile(x * 2, y * 2, Color.green);
-            //
-            //            //if (m_map[x, y].Second == CellState.CORRIDOR)
-            //            //DrawTile(x * 2, y * 2, Color.blue);
-            //    }
-            //}
-
-            for (int i = 0; i < m_rooms.Count; i++)
+            for (int y = 0; y < m_height; y++)
             {
-                Rect r = new Rect(m_rooms[i].x, m_rooms[i].y, m_rooms[i].w, m_rooms[i].h);
-                Handles.DrawSolidRectangleWithOutline(new Rect(r), Color.red, Color.red);
+                for (int x = 0; x < m_width; x++)
+                {
+                    if (m_map[x, y].state == CellState.ROOM)
+                        DrawTile(x, y, Color.red);
+
+                    if (m_map[x, y].state == CellState.WALL)
+                        DrawTile(x, y, Color.green);
+
+                    if (m_map[x, y].state == CellState.CORRIDOR)
+                        DrawTile(x, y, Color.blue);
+
+                    if (m_map[x, y].state == CellState.DOOR)
+                        DrawTile(x, y, Color.black);
+                }
             }
+
+            //for (int i = 0; i < m_rooms.Count; i++)
+            //{
+            //    Rect r = new Rect(m_rooms[i].x, m_rooms[i].y, m_rooms[i].w, m_rooms[i].h);
+            //    Handles.DrawSolidRectangleWithOutline(new Rect(r), Color.red, Color.red);
+            //}
 
             //for (int i = 0; i < path.Count; i++)
             //{
@@ -652,32 +700,32 @@ public class DungeonGenerator : MonoBehaviour
             //    Gizmos.DrawLine(path[i].start, path[i].end);
             //}
 
-            Gizmos.color = Color.green;
-            if (pathNodes != null)
-            {
-                for (int i = 0; i < pathNodes.Count; i++)
-                {
-                    if (pathNodes[i].parent != null)
-                    {
-                        Gizmos.DrawLine(pathNodes[i].cell.Vector2 + Vector2.one * 0.5f, pathNodes[i].parent.cell.Vector2 + Vector2.one * 0.5f);
-                    }
-                }
-            }
+            //Gizmos.color = Color.green;
+            //if (pathNodes != null)
+            //{
+            //    for (int i = 0; i < pathNodes.Count; i++)
+            //    {
+            //        if (pathNodes[i].parent != null)
+            //        {
+            //            Gizmos.DrawLine(pathNodes[i].cell.Vector2 + Vector2.one * 0.5f, pathNodes[i].parent.cell.Vector2 + Vector2.one * 0.5f);
+            //        }
+            //    }
+            //}
 
-            for (int y = 0; y < m_height; y++)
-            {
-                for (int x = 0; x < m_width; x++)
-                {
-                    if (m_map[x, y].state == CellState.DOOR)
-                    {
-                        DrawTile(Mathf.FloorToInt(x), Mathf.FloorToInt(y), Color.black);
-                        //DrawTile(Mathf.FloorToInt(x * 2 + 1), Mathf.FloorToInt(y * 2), Color.red);
-                        //DrawTile(Mathf.FloorToInt(x * 2), Mathf.FloorToInt(y * 2 + 1), Color.red);
-                        //DrawTile(Mathf.FloorToInt(x * 2 + 1), Mathf.FloorToInt(y * 2 + 1), Color.red);
+            //for (int y = 0; y < m_height; y++)
+            //{
+            //    for (int x = 0; x < m_width; x++)
+            //    {
+            //        if (m_map[x, y].state == CellState.DOOR)
+            //        {
+            //            DrawTile(Mathf.FloorToInt(x), Mathf.FloorToInt(y), Color.black);
+            //            //DrawTile(Mathf.FloorToInt(x * 2 + 1), Mathf.FloorToInt(y * 2), Color.red);
+            //            //DrawTile(Mathf.FloorToInt(x * 2), Mathf.FloorToInt(y * 2 + 1), Color.red);
+            //            //DrawTile(Mathf.FloorToInt(x * 2 + 1), Mathf.FloorToInt(y * 2 + 1), Color.red);
 
-                    }
-                }
-            }
+            //        }
+            //    }
+            //}
             //if (m_leafNodes != null)
             //{
             //    for (int i = 0; i < m_leafNodes.Count; i++)
