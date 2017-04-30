@@ -13,13 +13,9 @@ public class DungeonGenerator : MonoBehaviour
     [SerializeField]
     private uint m_roomWidthAverage, m_roomHeightAverage;
 
-    private List<Line> path;
-
     private List<CellNode> pathNodes;
 
     private CellNode m_rootNode;
-
-    private List<CellNode> m_leafNodes;
 
     private enum CellState
     {
@@ -32,184 +28,79 @@ public class DungeonGenerator : MonoBehaviour
 
     private CellNode[,] m_map;
 
-    private List<Box> m_rooms;
-    private List<Box> m_failedRooms;
-
-    private Box m_nextRoom;
-
     void Start()
     {
-        //DateTime startTime = DateTime.Now;
-        //m_map = new CellNode[m_width, m_height];
+        PlaceMap();
+    }
 
-        //for (int y = 0; y < m_height; y++)
-        //{
-        //    for (int x = 0; x < m_width; x++)
-        //    {
-        //        m_map[x, y] = new CellNode(x, y);
-        //    }
-        //}
-        //path = new List<Line>();
+    void PlaceMap()
+    {
+        DateTime startTime = DateTime.Now;
+        m_map = new CellNode[m_width, m_height];
 
-        //int index = 0;
+        for (int y = 0; y < m_height; y++)
+        {
+            for (int x = 0; x < m_width; x++)
+            {
+                m_map[x, y] = new CellNode(x, y);
+            }
+        }
 
-        //bool placementGood = false;
+        PlaceRooms();
+        PlacePath();
 
-        //m_rooms = new List<Box>();
-        //m_failedRooms = new List<Box>();
+        print(DateTime.Now - startTime);
 
-        //PlaceRooms();
-        //BuildMaze();
-
-        //print(DateTime.Now - startTime);
-
-        LoadMap();
+        //LoadMap();
     }
 
     void PlaceRooms()
     {
+        List<Box> rooms = new List<Box>();
         Box mapBox = new Box(0, 0, (int)m_width, (int)m_height);
+
+        Box nextRoom;
 
         int index = 0;
 
         while (index < 1000)
         {
-            m_nextRoom = CreateRandomRoom();
-            bool mapContainsRoom = mapBox.Contains(m_nextRoom);
-            bool roomOk = CheckRoomPlacement(m_nextRoom, m_rooms);
+            nextRoom = CreateRandomRoom();
+            bool mapContainsRoom = mapBox.Contains(nextRoom);
+            bool roomOk = CheckRoomPlacement(nextRoom, rooms);
 
             index = 0;
             while (!mapContainsRoom || !roomOk)
             {
-                m_failedRooms.Add(m_nextRoom);
-                m_nextRoom = CreateRandomRoom();
-                mapContainsRoom = mapBox.Contains(m_nextRoom);
-                roomOk = CheckRoomPlacement(m_nextRoom, m_rooms);
-                //yield return new WaitForSeconds(0);
+                nextRoom = CreateRandomRoom();
+                mapContainsRoom = mapBox.Contains(nextRoom);
+                roomOk = CheckRoomPlacement(nextRoom, rooms);
                 index++;
             }
-            m_rooms.Add(m_nextRoom);
-        }
-        print("LEVEL GENERATION COPMPLETE " + m_rooms.Count + " ROOMS CREATED");
-
-        for (int i = 0; i < m_rooms.Count; i++)
-        {
-            AddRoomToMap(m_rooms[i]);
+            rooms.Add(nextRoom);
+            AddRoomToMap(nextRoom);
         }
     }
 
-    void Update()
-    {
-        //for (int i = 0; i < m_failedRooms.Count; i++)
-        //{
-        //    Color c = new Color(0, 0, 1, (i / (float)m_failedRooms.Count) * i);
-        //    m_failedRooms[i].Draw(c, c);
-        //}
-
-        //if (m_failedRooms.Count > 20)
-        //{
-        //    m_failedRooms.RemoveAt(0);
-        //}
-
-        //for (int i = 0; i < m_rooms.Count; i++)
-        //{
-        //    //m_rooms[i].Draw(Color.clear, Color.red);
-        //}
-
-        //if (m_nextRoom != null)
-        //{
-        //    //m_nextRoom.Draw(Color.clear, Color.green);
-        //}
-    }
-
-    void BuildMaze()
+    void PlacePath()
     {
         //TODO: Space the corridors 1 cell away from each other (THIS IS DONE BY MULTIPLYING EVERYTHING BY TWO)
         //TODO: Unwind the corridors to create a MST
 
-        m_leafNodes = new List<CellNode>();
-
-        m_rootNode = RandomCellNode();
+        m_rootNode = RandomEmptyCell();
         Carve(m_rootNode, 0);
         m_rootNode.RemoveDeadEnds();
-        //for (int i = 0; i < m_leafNodes.Count; i++)
-        //{
-        //    Unwind(m_leafNodes[i]);
-        //}
 
         pathNodes = new List<CellNode>();
         m_rootNode.AllChildren(ref pathNodes);
-
-        print(m_leafNodes.Count);
-
-        ExportMap();
-
-        //m_rootNode.LeafNodes(ref m_leafNodes);
-
-        //while (cellNodeStack.Count > 0)
-        //{
-        //    currentNode.children = GetUnvisitedNeighbours(currentNode);
-
-        //    int result = currentNode.CalculateNeigbours();
-
-        //    if (result == 0) // if there are no free adjacent cells, need to backtrack
-        //    {
-        //        CellNode junction = cellNodeStack.Pop();
-        //        currentNode = junction;
-        //    }
-        //    else // Continue path to free adjacent cell
-        //    {
-        //        //Need to set the children first;
-
-        //        CellNode nextNode = currentNode.GetRandomChild(ref prevDir);
-
-        //        if ((result & (result - 1)) == 0) // if there is only one neighbour
-        //        {
-
-        //        }
-        //        else // there is more than one neighbour so we need to add a new node to the tree
-        //        {
-        //            cellNodeStack.Push(currentNode);
-        //        }
-
-        //        path.Add(new Line(currentNode.cell.Vector2 + (Vector2.one * 0.5f), nextNode.cell.Vector2 + (Vector2.one * 0.5f)));
-
-        //        currentNode = nextNode;
-
-        //        m_map[currentNode.cell.x, currentNode.cell.y].state = CellState.CORRIDOR;
-        //    }
-        //}
-        //yield return new WaitForSeconds(0.001f);
     }
-
-    //void Carve(ref CellNode targetNode, ref int prevDir, ref int escape)
-    //{
-    //    //if (escape > 100000)
-    //    //{
-    //    //    return;
-    //    //}
-    //    targetNode.children = GetUnvisitedNeighbours(targetNode);
-
-    //    targetNode.CalculateNeigbours();
-
-    //    if (targetNode.neighbours == 0) // if there are no free adjacent cells, need to backtrack
-    //    {
-    //        return;
-    //    }
-
-    //    CellNode nextNode = targetNode.GetRandomChild(ref prevDir);
-
-    //    path.Add(new Line(targetNode.cell.Vector2 + (Vector2.one * 0.5f), nextNode.cell.Vector2 + (Vector2.one * 0.5f)));
-
-    //    escape++;
-
-    //    m_map[targetNode.cell.x, targetNode.cell.y].state = CellState.CORRIDOR;
-
-    //    Carve(ref nextNode, ref prevDir, ref escape);
-    //}
 
     void Carve(CellNode targetNode, int prevDir)
     {
+        /*
+         * TODO: Need to check to see if the root node only has one child and recurse until it has more than one as the root node is often a dead end.
+        */
+
         //ADD NODE
         //IF HAS CHILDREN
 
@@ -238,15 +129,9 @@ public class DungeonGenerator : MonoBehaviour
             }
         }
 
-        if (randomIndices.Count == 0)
-        {
-            m_leafNodes.Add(targetNode);
-            return;
-        }
-
         while (randomIndices.Count > 0)
         {
-            int rand = Random.value > 0.85 ? randomIndices[Random.Range(0, randomIndices.Count)] : prevDir;
+            int rand = Random.value > 0.85f ? randomIndices[Random.Range(0, randomIndices.Count)] : prevDir;
             randomIndices.Remove(rand);
 
             CellNode nextNode = possibleChildren[rand];
@@ -261,164 +146,9 @@ public class DungeonGenerator : MonoBehaviour
         }
     }
 
-
-
     bool CheckNode(CellNode node)
     {
         return node != null && !node.added && (node.state == CellState.EMPTY || node.state == CellState.DOOR);
-    }
-
-    //List<CellNode> GetRandom(CellNode[] possible, ref int dir)
-    //{
-    //    int randCell = -1;
-    //    List<int> setBits = new List<int>();
-
-    //    for (int i = 0; i < 4; i++)
-    //    {
-    //        if (possible[i] != null && !possible[i].added)
-    //        {
-    //            setBits.Add(i);
-    //        }
-    //    }
-
-    //    if (setBits.Contains(dir) && Random.value < 0.85f)
-    //    {
-    //        randCell = dir;
-    //    }
-    //    else
-    //    {
-    //        randCell = setBits[Random.Range(0, setBits.Count)];
-    //    }
-
-    //    dir = randCell;
-
-    //    return new Pair<CellNode, int>(possible[randCell], randCell);
-    //}
-
-    List<CellNode> GetNeighbours(int x, int y)
-    {
-        int result = 0;
-
-        List<CellNode> neighbours = new List<CellNode>();
-        if (y < m_height - 1)
-        {
-            result |= (1 << 0); // N
-            CellNode node = m_map[x, y + 1];
-
-            if (!node.visited)
-            {
-                neighbours.Add(node);
-                node.visited = true;
-            }
-        }
-
-        if (x < m_width - 1)
-        {
-            result |= (1 << 1); // E
-            CellNode node = m_map[x + 1, y];
-
-            if (!node.visited)
-            {
-                neighbours.Add(node);
-                node.visited = true;
-            }
-        }
-
-        if (y > 1)
-        {
-            result |= (1 << 2); // S
-            CellNode node = m_map[x, y - 1];
-
-            if (!node.visited)
-            {
-                neighbours.Add(node);
-                node.visited = true;
-            }
-        }
-
-        if (x > 1)
-        {
-            result |= (1 << 3); // W
-            CellNode node = m_map[x - 1, y];
-
-            if (!node.visited)
-            {
-                neighbours.Add(node);
-                node.visited = true;
-            }
-        }
-
-        //if ((result & 3) == 3)
-        //{
-        //    neighbours.Add(new Cell(x + 1, y + 1));
-        //}
-        //if ((result & 6) == 6)
-        //{
-        //    neighbours.Add(new Cell(x + 1, y - 1));
-        //}
-        //if ((result & 12) == 12)
-        //{
-        //    neighbours.Add(new Cell(x - 1, y - 1));
-        //}
-        //if ((result & 9) == 9)
-        //{
-        //    neighbours.Add(new Cell(x - 1, y + 1));
-        //}
-
-        return neighbours;
-    }
-
-    int CheckAdjacentMatches(int x, int y, CellState matchState)
-    {
-        int result = 0;
-
-        if (y < m_height - 1 && m_map[x, y + 1].state == matchState)
-        {
-            result |= (1 << 0); // N
-        }
-
-        if (x < m_width - 1 && m_map[x + 1, y].state == matchState)
-        {
-            result |= (1 << 1); // E
-        }
-
-        if (y > 1 && m_map[x, y - 1].state == matchState)
-        {
-            result |= (1 << 2); // S
-        }
-
-        if (x > 1 && m_map[x - 1, y].state == matchState)
-        {
-            result |= (1 << 3); // W
-        }
-        return result;
-    }
-
-    int GetPossibleDirections(CellNode node)
-    {
-        int result = 0;
-        int x = node.cell.x, y = node.cell.y;
-
-        if (y < m_height - 1 && !m_map[x, y + 1].added)
-        {
-            result |= (1 << 0); // N
-        }
-
-        if (x < m_width - 1 && !m_map[x + 1, y].added)
-        {
-            result |= (1 << 1); // E
-        }
-
-        if (y > 1 && !m_map[x, y - 1].added)
-        {
-            result |= (1 << 2); // S
-        }
-
-        if (x > 1 && !m_map[x - 1, y].added)
-        {
-            result |= (1 << 3); // W
-        }
-        return result;
     }
 
     CellNode[] GetAvailableNeighbours(CellNode node)
@@ -446,58 +176,7 @@ public class DungeonGenerator : MonoBehaviour
         return neighbours;
     }
 
-    CellNode GetRandomCell(int x, int y, int result, ref int dir)
-    {
-        int randCell = 0;
-        List<int> setBits = new List<int>();
-
-        if (((result >> 0) & 1) == 1)
-        {
-            setBits.Add(0);
-        }
-        if (((result >> 1) & 1) == 1)
-        {
-            setBits.Add(1);
-        }
-        if (((result >> 2) & 1) == 1)
-        {
-            setBits.Add(2);
-        }
-        if (((result >> 3) & 1) == 1)
-        {
-            setBits.Add(3);
-        }
-
-        if (setBits.Contains(dir) && Random.value < 0.85f)
-        {
-            randCell = dir;
-        }
-        else
-        {
-            randCell = setBits[Random.Range(0, setBits.Count)];
-        }
-
-        dir = randCell;
-        if (randCell == 0)
-        {
-            return m_map[x, y + 1];
-        }
-        if (randCell == 1)
-        {
-            return m_map[x + 1, y];
-        }
-        if (randCell == 2)
-        {
-            return m_map[x, y - 1];
-        }
-        if (randCell == 3)
-        {
-            return m_map[x - 1, y];
-        }
-        return null;
-    }
-
-    CellNode RandomCellNode()
+    CellNode RandomEmptyCell()
     {
         bool pointOk = false;
 
@@ -509,20 +188,17 @@ public class DungeonGenerator : MonoBehaviour
             x = (int)Random.Range(0, m_width);
             y = (int)Random.Range(0, m_height);
 
-            pointOk = CheckPoint(x, y, m_rooms);
+            pointOk = CheckPoint(x, y);
         }
 
         return new CellNode(x, y);
     }
 
-    bool CheckPoint(int x, int y, List<Box> boxes)
+    bool CheckPoint(int x, int y)
     {
-        for (int i = 0; i < boxes.Count; i++)
+        if (m_map[x, y].state != CellState.EMPTY)
         {
-            if (boxes[i].Contains(x, y))
-            {
-                return false;
-            }
+            return false;
         }
         return true;
     }
@@ -552,22 +228,6 @@ public class DungeonGenerator : MonoBehaviour
         return new Box(x, y, w, h);
     }
 
-    void CreateRoomAt(int x, int y, int w, int h, bool force = false)
-    {
-        if (x > m_width || y > m_height)
-        {
-            Debug.Log("Out of range");
-            return;
-        }
-        for (int j = y; j < y + h; j++)
-        {
-            for (int i = x; i < x + w; i++)
-            {
-                m_map[i, j].state = CellState.ROOM;
-            }
-        }
-    }
-
     void AddRoomToMap(Box room)
     {
         for (int j = room.y; j < room.y + room.h; j++)
@@ -579,10 +239,10 @@ public class DungeonGenerator : MonoBehaviour
         }
 
         AddRandomDoor(room);
-        if (room.w * room.h > 100 || Random.value > 0.9f)
-        {
-            AddRandomDoor(room);
-        }
+        //if (room.w * room.h > (m_roomWidthAverage * m_roomHeightAverage) || Random.value > 0.9f)
+        //{
+        //    AddRandomDoor(room);
+        //}
     }
 
     void AddRandomDoor(Box room)
@@ -677,62 +337,26 @@ public class DungeonGenerator : MonoBehaviour
                     if (m_map[x, y].state == CellState.WALL)
                         DrawTile(x, y, Color.green);
 
-                    if (m_map[x, y].state == CellState.CORRIDOR)
-                        DrawTile(x, y, Color.blue);
+                    //if (m_map[x, y].state == CellState.CORRIDOR)
+                    //    DrawTile(x, y, Color.blue);
 
                     if (m_map[x, y].state == CellState.DOOR)
                         DrawTile(x, y, Color.black);
                 }
             }
 
-            //for (int i = 0; i < m_rooms.Count; i++)
-            //{
-            //    Rect r = new Rect(m_rooms[i].x, m_rooms[i].y, m_rooms[i].w, m_rooms[i].h);
-            //    Handles.DrawSolidRectangleWithOutline(new Rect(r), Color.red, Color.red);
-            //}
-
-            //for (int i = 0; i < path.Count; i++)
-            //{
-            //    //DrawTile(Mathf.FloorToInt(path[i].start.x ), Mathf.FloorToInt(path[i].start.y * 2), Color.blue);
-            //    //DrawTile(Mathf.FloorToInt(path[i].end.x ), Mathf.FloorToInt(path[i].end.y * 2), Color.blue);
-            //    //DrawTile(Mathf.FloorToInt(Mathf.Lerp(path[i].start.x * 2, path[i].end.x * 2, 0.5f)), Mathf.FloorToInt(Mathf.Lerp(path[i].start.y * 2, path[i].end.y * 2, 0.5f)), Color.blue);
-
-            //    Gizmos.DrawLine(path[i].start, path[i].end);
-            //}
-
-            //Gizmos.color = Color.green;
-            //if (pathNodes != null)
-            //{
-            //    for (int i = 0; i < pathNodes.Count; i++)
-            //    {
-            //        if (pathNodes[i].parent != null)
-            //        {
-            //            Gizmos.DrawLine(pathNodes[i].cell.Vector2 + Vector2.one * 0.5f, pathNodes[i].parent.cell.Vector2 + Vector2.one * 0.5f);
-            //        }
-            //    }
-            //}
-
-            //for (int y = 0; y < m_height; y++)
-            //{
-            //    for (int x = 0; x < m_width; x++)
-            //    {
-            //        if (m_map[x, y].state == CellState.DOOR)
-            //        {
-            //            DrawTile(Mathf.FloorToInt(x), Mathf.FloorToInt(y), Color.black);
-            //            //DrawTile(Mathf.FloorToInt(x * 2 + 1), Mathf.FloorToInt(y * 2), Color.red);
-            //            //DrawTile(Mathf.FloorToInt(x * 2), Mathf.FloorToInt(y * 2 + 1), Color.red);
-            //            //DrawTile(Mathf.FloorToInt(x * 2 + 1), Mathf.FloorToInt(y * 2 + 1), Color.red);
-
-            //        }
-            //    }
-            //}
-            //if (m_leafNodes != null)
-            //{
-            //    for (int i = 0; i < m_leafNodes.Count; i++)
-            //    {
-            //        Gizmos.DrawRay(m_leafNodes[i].cell.Vector2 + Vector2.one * 0.5f, Vector3.forward);
-            //    }
-            //}
+            Gizmos.color = Color.green;
+            if (pathNodes != null)
+            {
+                for (int i = 0; i < pathNodes.Count; i++)
+                {
+                    if (pathNodes[i].parent != null)
+                    {
+                        Gizmos.DrawLine(pathNodes[i].cell.Vector2 + Vector2.one * 0.5f,
+                            pathNodes[i].parent.cell.Vector2 + Vector2.one * 0.5f);
+                    }
+                }
+            }
         }
     }
 
