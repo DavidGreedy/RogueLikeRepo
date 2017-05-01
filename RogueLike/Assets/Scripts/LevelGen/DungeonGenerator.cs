@@ -62,6 +62,14 @@ public class DungeonGenerator : MonoBehaviour
             return null;
         }
 
+        public void SetCellState(int x, int y, CellState state)
+        {
+            if (ContainsElement(x, y))
+            {
+                m_cells[x, y].state = state;
+            }
+        }
+
         public CellNode GetCellNeighbour(int x, int y, int index) // 0 = N, 1 = E, 2 = S, 3 = W
         {
             if (ContainsElement(x, y) && index < 4)
@@ -240,8 +248,39 @@ public class DungeonGenerator : MonoBehaviour
             rooms.Add(nextRoom);
             m_cellMap.SetBox(nextRoom.x, nextRoom.y, nextRoom.w, nextRoom.h, CellState.ROOM);
         }
+
+        //PLACE DOORS HERE USING THE LIST OF ROOMS.
+        PlaceDoors(rooms);
+
     }
 
+    void PlaceDoors(List<Box> rooms)
+    {
+        for (int i = 0; i < rooms.Count; i++)
+        {
+
+            int doorx = Random.Range(rooms[i].x + 1, rooms[i].x + rooms[i].w - 1);
+            int doory = Random.Range(rooms[i].y + 1, rooms[i].y + rooms[i].h - 1);
+
+            float r = Random.value;
+            if (r > 0.75f)
+            {
+                m_cellMap.SetCellState(doorx, rooms[i].y, CellState.DOOR);
+            }
+            else if (r > 0.5f)
+            {
+                m_cellMap.SetCellState(rooms[i].x, doory, CellState.DOOR);
+            }
+            else if (r > 0.25f)
+            {
+                m_cellMap.SetCellState(doorx, rooms[i].y + rooms[i].h - 1, CellState.DOOR);
+            }
+            else
+            {
+                m_cellMap.SetCellState(rooms[i].x + rooms[i].w - 1, doory, CellState.DOOR);
+            }
+        }
+    }
 
     void PlacePath()
     {
@@ -249,7 +288,7 @@ public class DungeonGenerator : MonoBehaviour
 
         m_rootNode = m_cellMap.RandomCell(CellState.EMPTY);
         Carve(m_rootNode, 0);
-        //m_rootNode.Reduce(CellState.DOOR);
+        m_rootNode.Reduce(CellState.DOOR);
 
         pathNodes = new List<CellNode>();
         m_rootNode.AllChildren(ref pathNodes);
@@ -259,11 +298,11 @@ public class DungeonGenerator : MonoBehaviour
     {
         /*
          * TODO: Need to check to see if the root node only has one child and recurse until it has more than one as the root node is often a dead end.
-        */
+         */
 
         /* 
-        *  TODO: Maybe prioratise nodes with more neighbours / ones with the most connections to increase the amount of cross / t junctions
-        */
+         * TODO: Maybe prioratise nodes with more neighbours / ones with the most connections to increase the amount of cross / t junctions
+         */
 
         //ADD NODE
         //IF HAS CHILDREN
