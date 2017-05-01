@@ -26,7 +26,158 @@ public class DungeonGenerator : MonoBehaviour
         DOOR = 4
     }
 
-    private CellNode[,] m_map;
+    private CellMap m_cellMap;
+
+    private class CellMap
+    {
+        private CellNode[,] m_cells;
+        private int m_width, m_height;
+
+        public CellMap(int width, int height)
+        {
+            this.m_width = width;
+            this.m_height = height;
+
+            m_cells = new CellNode[width, height];
+            ClearMap();
+        }
+
+        public void ClearMap()
+        {
+            for (int y = 0; y < m_height; y++)
+            {
+                for (int x = 0; x < m_width; x++)
+                {
+                    m_cells[x, y] = new CellNode(x, y);
+                }
+            }
+        }
+
+        public CellNode GetCell(int x, int y)
+        {
+            if (ContainsElement(x, y))
+            {
+                return m_cells[x, y];
+            }
+            return null;
+        }
+
+        public CellNode GetCellNeighbour(int x, int y, int index) // 0 = N, 1 = E, 2 = S, 3 = W
+        {
+            if (ContainsElement(x, y) && index < 4)
+            {
+                switch (index)
+                {
+                    case 0:
+                    {
+                        if (y < m_height - 1)
+                        {
+                            return m_cells[x, y + 1];
+                        }
+                    }
+                    break;
+                    case 1:
+                    {
+                        if (x < m_width - 1)
+                        {
+                            return m_cells[x + 1, y];
+                        }
+                    }
+                    break;
+                    case 2:
+                    {
+                        if (y > 0)
+                        {
+                            return m_cells[x, y - 1];
+                        }
+                    }
+                    break;
+                    case 3:
+                    {
+                        if (x > 0)
+                        {
+                            return m_cells[x - 1, y];
+                        }
+                    }
+                    break;
+                }
+            }
+            return null;
+        }
+
+        public CellNode[] GetCellNeighbours(int x, int y)
+        {
+            CellNode[] neighbours = new CellNode[4];
+            if (y < m_height - 1)
+            {
+                neighbours[0] = m_cells[x, y + 1];
+            }
+
+            if (x < m_width - 1)
+            {
+                neighbours[1] = m_cells[x + 1, y];
+            }
+
+            if (y > 0)
+            {
+                neighbours[2] = m_cells[x, y - 1];
+            }
+
+            if (x > 0)
+            {
+                neighbours[3] = m_cells[x - 1, y];
+            }
+
+            return neighbours;
+        }
+
+        public void SetBox(int x, int y, int w, int h, CellState state)
+        {
+            for (int j = y; j < y + h; j++)
+            {
+                for (int i = x; i < x + w; i++)
+                {
+                    m_cells[i, j].state = state;
+                }
+            }
+        }
+
+        public bool ContainsElement(int x, int y) // if cells[x,y] is within the array bounds
+        {
+            return (x >= 0 && y >= 0 && x < m_width && y < m_height);
+        }
+
+        public bool ContainsElements(int xStart, int yStart, int xEnd, int yEnd)
+        {
+            return ContainsElement(xStart, yStart) && ContainsElement(xEnd, yEnd);
+        }
+
+        public bool CheckState(int xStart, int yStart, int xEnd, int yEnd, CellState state)
+        {
+            for (int y = yStart; y < yEnd; y++)
+            {
+                for (int x = xStart; x < xEnd; x++)
+                {
+                    if (m_cells[x, y].state == state)
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        public void DebugDraw()
+        {
+            for (int y = 0; y < m_height; y++)
+            {
+                for (int x = 0; x < m_width; x++)
+                {
+                    m_cells[x, y].Draw();
+                }
+            }
+        }
+    }
 
     void Start()
     {
@@ -36,15 +187,8 @@ public class DungeonGenerator : MonoBehaviour
     void PlaceMap()
     {
         DateTime startTime = DateTime.Now;
-        m_map = new CellNode[m_width, m_height];
 
-        for (int y = 0; y < m_height; y++)
-        {
-            for (int x = 0; x < m_width; x++)
-            {
-                m_map[x, y] = new CellNode(x, y);
-            }
-        }
+        m_cellMap = new CellMap((int)m_width, (int)m_height);
 
         PlaceRooms();
         PlacePath();
@@ -57,39 +201,55 @@ public class DungeonGenerator : MonoBehaviour
     void PlaceRooms()
     {
         List<Box> rooms = new List<Box>();
-        Box mapBox = new Box(0, 0, (int)m_width, (int)m_height);
-
         Box nextRoom;
 
         int index = 0;
 
         while (index < 1000)
         {
-            nextRoom = CreateRandomRoom();
-            bool mapContainsRoom = mapBox.Contains(nextRoom);
-            bool roomOk = CheckRoomPlacement(nextRoom, rooms);
+            nextRoom = CreateRandomRoom((int)m_width, (int)m_height);
+            bool mapContainsRoom = m_cellMap.ContainsElements(nextRoom.x - 1, nextRoom.y - 1, nextRoom.x + nextRoom.w + 1, nextRoom.y + nextRoom.h + 1);
+            bool roomOk = !m_cellMap.CheckState(nextRoom.x - 1, nextRoom.y - 1, nextRoom.x + nextRoom.w + 1, nextRoom.y + nextRoom.h + 1, CellState.ROOM);
 
             index = 0;
             while (!mapContainsRoom || !roomOk)
             {
-                nextRoom = CreateRandomRoom();
-                mapContainsRoom = mapBox.Contains(nextRoom);
-                roomOk = CheckRoomPlacement(nextRoom, rooms);
+                nextRoom = CreateRandomRoom((int)m_width, (int)m_height);
+                mapContainsRoom = m_cellMap.ContainsElements(nextRoom.x - 1, nextRoom.y - 1, nextRoom.x + nextRoom.w + 1, nextRoom.y + nextRoom.h + 1);
+                roomOk = !m_cellMap.CheckState(nextRoom.x - 1, nextRoom.y - 1, nextRoom.x + nextRoom.w + 1, nextRoom.y + nextRoom.h + 1, CellState.ROOM);
                 index++;
             }
+
             rooms.Add(nextRoom);
-            AddRoomToMap(nextRoom);
+            m_cellMap.SetBox(nextRoom.x, nextRoom.y, nextRoom.w, nextRoom.h, CellState.ROOM);
         }
+    }
+
+    CellNode RandomEmptyCell()
+    {
+        bool pointOk = false;
+
+        int x = 0;
+        int y = 0;
+
+        while (!pointOk)
+        {
+            x = (int)Random.Range(0, m_width);
+            y = (int)Random.Range(0, m_height);
+
+            pointOk = m_cellMap.ContainsElement(x, y);
+        }
+
+        return new CellNode(x, y);
     }
 
     void PlacePath()
     {
         //TODO: Space the corridors 1 cell away from each other (THIS IS DONE BY MULTIPLYING EVERYTHING BY TWO)
-        //TODO: Unwind the corridors to create a MST
 
         m_rootNode = RandomEmptyCell();
         Carve(m_rootNode, 0);
-        m_rootNode.RemoveDeadEnds();
+        //m_rootNode.Reduce(CellState.DOOR);
 
         pathNodes = new List<CellNode>();
         m_rootNode.AllChildren(ref pathNodes);
@@ -117,7 +277,7 @@ public class DungeonGenerator : MonoBehaviour
             targetNode.state = CellState.CORRIDOR;
         }
 
-        CellNode[] possibleChildren = GetAvailableNeighbours(targetNode);
+        CellNode[] possibleChildren = m_cellMap.GetCellNeighbours(targetNode.x, targetNode.y);
 
         List<int> randomIndices = new List<int>();
 
@@ -139,8 +299,6 @@ public class DungeonGenerator : MonoBehaviour
             if (CheckNode(nextNode))
             {
                 targetNode.AddChild(rand, nextNode);
-                //path.Add(new Line(targetNode.cell.Vector2, nextNode.cell.Vector2));
-
                 Carve(nextNode, rand);
             }
         }
@@ -151,199 +309,65 @@ public class DungeonGenerator : MonoBehaviour
         return node != null && !node.added && (node.state == CellState.EMPTY || node.state == CellState.DOOR);
     }
 
-    CellNode[] GetAvailableNeighbours(CellNode node)
-    {
-        CellNode[] neighbours = new CellNode[4];
-
-        int x = node.cell.x, y = node.cell.y;
-
-        if (y < m_height - 1)
-        {
-            neighbours[0] = m_map[x, y + 1];
-        }
-        if (x < m_width - 1)
-        {
-            neighbours[1] = m_map[x + 1, y];
-        }
-        if (y > 0)
-        {
-            neighbours[2] = m_map[x, y - 1];
-        }
-        if (x > 0)
-        {
-            neighbours[3] = m_map[x - 1, y];
-        }
-        return neighbours;
-    }
-
-    CellNode RandomEmptyCell()
-    {
-        bool pointOk = false;
-
-        int x = 0;
-        int y = 0;
-
-        while (!pointOk)
-        {
-            x = (int)Random.Range(0, m_width);
-            y = (int)Random.Range(0, m_height);
-
-            pointOk = CheckPoint(x, y);
-        }
-
-        return new CellNode(x, y);
-    }
-
-    bool CheckPoint(int x, int y)
-    {
-        if (m_map[x, y].state != CellState.EMPTY)
-        {
-            return false;
-        }
-        return true;
-    }
-
-    bool CheckRoomPlacement(Box box, List<Box> boxes)
-    {
-        for (int i = 0; i < boxes.Count; i++)
-        {
-            if (boxes[i].Intersects(box))
-            {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    Box CreateRandomRoom()
+    Box CreateRandomRoom(int width, int height)
     {
         int x, y, w, h;
 
         w = Random.Range(5, 15);
         h = Random.Range(5, 15);
 
-        x = (int)Random.Range(1, m_width - w);
-        y = (int)Random.Range(1, m_height - h);
+        x = (int)Random.Range(1, width - w);
+        y = (int)Random.Range(1, height - h);
 
         return new Box(x, y, w, h);
     }
 
-    void AddRoomToMap(Box room)
-    {
-        for (int j = room.y; j < room.y + room.h; j++)
-        {
-            for (int i = room.x; i < room.x + room.w; i++)
-            {
-                m_map[i, j].state = CellState.ROOM;
-            }
-        }
 
-        AddRandomDoor(room);
-        //if (room.w * room.h > (m_roomWidthAverage * m_roomHeightAverage) || Random.value > 0.9f)
-        //{
-        //    AddRandomDoor(room);
-        //}
-    }
+    //void ExportMap()
+    //{
+    //    StreamWriter sw = new StreamWriter("MAP.txt");
+    //    sw.WriteLine(m_width);
+    //    sw.WriteLine(m_height);
+    //    string[] line = new string[m_width];
 
-    void AddRandomDoor(Box room)
-    {
-        int doorx = Random.Range(room.x + 1, room.x + room.w - 1);
-        int doory = Random.Range(room.y + 1, room.y + room.h - 1);
+    //    for (int y = (int)m_height - 1; y >= 0; y--)
+    //    {
+    //        for (int x = 0; x < m_width; x++)
+    //        {
+    //            line[x] = ((int)m_map[x, y].state).ToString();
+    //        }
+    //        sw.WriteLine(String.Join(" ", line));
+    //    }
+    //    sw.Close();
+    //}
 
-        float r = Random.value;
-        if (r > 0.75f)
-        {
-            m_map[doorx, room.y].state = CellState.DOOR;
-        }
-        else if (r > 0.5f)
-        {
-            m_map[room.x, doory].state = CellState.DOOR;
-        }
-        else if (r > 0.25f)
-        {
-            m_map[doorx, room.y + room.h - 1].state = CellState.DOOR;
-        }
-        else
-        {
-            m_map[room.x + room.w - 1, doory].state = CellState.DOOR;
-        }
-    }
+    //void LoadMap()
+    //{
+    //    StreamReader sr = new StreamReader("MAP.txt");
 
-    void ExportMap()
-    {
-        StreamWriter sw = new StreamWriter("MAP.txt");
-        sw.WriteLine(m_width);
-        sw.WriteLine(m_height);
-        string[] line = new string[m_width];
+    //    m_width = (uint)int.Parse(sr.ReadLine());
+    //    m_height = (uint)int.Parse(sr.ReadLine());
+    //    m_map = new CellNode[m_width, m_height];
 
-        for (int y = (int)m_height - 1; y >= 0; y--)
-        {
-            for (int x = 0; x < m_width; x++)
-            {
-                line[x] = ((int)m_map[x, y].state).ToString();
-            }
-            sw.WriteLine(String.Join(" ", line));
-        }
-        sw.Close();
-    }
-
-    void LoadMap()
-    {
-        StreamReader sr = new StreamReader("MAP.txt");
-
-        m_width = (uint)int.Parse(sr.ReadLine());
-        m_height = (uint)int.Parse(sr.ReadLine());
-        m_map = new CellNode[m_width, m_height];
-
-        string[] line = new string[m_width];
-        try
-        {
-            for (int y = (int)m_height - 1; y >= 0; y--)
-            {
-                line = sr.ReadLine().Split(' ');
-                for (int x = 0; x < m_width; x++)
-                {
-                    m_map[x, y] = new CellNode(x, y);
-                    int state = int.Parse(line[x]);
-                    m_map[x, y].state = (CellState)state;
-                }
-            }
-            sr.Close();
-
-        }
-        catch (Exception)
-        {
-
-            throw;
-        }
-    }
-
-    void DrawTile(int x, int y, Color fill)
-    {
-        Handles.DrawSolidRectangleWithOutline(new Rect(x, y, 1, 1), fill, Color.clear);
-    }
+    //    string[] line = new string[m_width];
+    //    for (int y = (int)m_height - 1; y >= 0; y--)
+    //    {
+    //        line = sr.ReadLine().Split(' ');
+    //        for (int x = 0; x < m_width; x++)
+    //        {
+    //            m_map[x, y] = new CellNode(x, y);
+    //            int state = int.Parse(line[x]);
+    //            m_map[x, y].state = (CellState)state;
+    //        }
+    //    }
+    //    sr.Close();
+    //}
 
     private void OnDrawGizmos()
     {
         if (Application.isPlaying)
         {
-            for (int y = 0; y < m_height; y++)
-            {
-                for (int x = 0; x < m_width; x++)
-                {
-                    if (m_map[x, y].state == CellState.ROOM)
-                        DrawTile(x, y, Color.red);
-
-                    if (m_map[x, y].state == CellState.WALL)
-                        DrawTile(x, y, Color.green);
-
-                    //if (m_map[x, y].state == CellState.CORRIDOR)
-                    //    DrawTile(x, y, Color.blue);
-
-                    if (m_map[x, y].state == CellState.DOOR)
-                        DrawTile(x, y, Color.black);
-                }
-            }
+            m_cellMap.DebugDraw();
 
             Gizmos.color = Color.green;
             if (pathNodes != null)
@@ -352,8 +376,8 @@ public class DungeonGenerator : MonoBehaviour
                 {
                     if (pathNodes[i].parent != null)
                     {
-                        Gizmos.DrawLine(pathNodes[i].cell.Vector2 + Vector2.one * 0.5f,
-                            pathNodes[i].parent.cell.Vector2 + Vector2.one * 0.5f);
+                        Gizmos.DrawLine(pathNodes[i].Vector2 + Vector2.one * 0.5f,
+                            pathNodes[i].parent.Vector2 + Vector2.one * 0.5f);
                     }
                 }
             }
@@ -425,42 +449,26 @@ public class DungeonGenerator : MonoBehaviour
         }
     }
 
-    class Cell
+    class CellNode
     {
         public int x;
         public int y;
 
-        public Cell(int x, int y)
-        {
-            this.x = x;
-            this.y = y;
-        }
         public Vector2 Vector2 { get { return new Vector2(x, y); } }
-    }
 
-    class CellNode
-    {
-        public Cell cell;
         public CellState state;
-        public bool visited;
         public bool added;
-
-        public int childCount;
 
         public CellNode parent;
 
         private CellNode[] children;
 
-        public int neighbours;
-
         public CellNode(int x, int y)
         {
-            cell = new Cell(x, y);
+            this.x = x;
+            this.y = y;
             state = CellState.EMPTY;
-            visited = false;
             children = new CellNode[4];
-            neighbours = 0;
-            childCount = 0;
         }
 
         public bool IsLeaf
@@ -477,7 +485,6 @@ public class DungeonGenerator : MonoBehaviour
 
             children[index] = child;
             child.parent = this;
-            childCount++;
         }
 
         public void RemoveChildren()
@@ -486,7 +493,7 @@ public class DungeonGenerator : MonoBehaviour
             {
                 return;
             }
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < children.Length; i++)
             {
                 if (children[i] != null)
                 {
@@ -495,7 +502,6 @@ public class DungeonGenerator : MonoBehaviour
                 }
             }
             children = null;
-            childCount = 0;
         }
 
         public void AllChildren(ref List<CellNode> allChildren)
@@ -513,10 +519,10 @@ public class DungeonGenerator : MonoBehaviour
             }
         }
 
-        public bool RemoveDeadEnds()
+        public bool Reduce(CellState checkState)
         {
             bool save = false;
-            if (state == CellState.DOOR)
+            if (state == checkState)
             {
                 return true;
             }
@@ -527,7 +533,7 @@ public class DungeonGenerator : MonoBehaviour
                 {
                     if (children[i] != null)
                     {
-                        if (!children[i].RemoveDeadEnds())
+                        if (!children[i].Reduce(checkState))
                         {
                             children[i].RemoveChildren();
                             children[i] = null;
@@ -540,6 +546,35 @@ public class DungeonGenerator : MonoBehaviour
                 }
             }
             return save;
+        }
+
+        public void Draw()
+        {
+            Color color = Color.clear;
+            switch (state)
+            {
+                case CellState.EMPTY:
+                {
+                    return;
+                }
+                break;
+                case CellState.ROOM:
+                {
+                    color = Color.red;
+                }
+                break;
+                //case CellState.CORRIDOR:
+                //{
+                //    color = Color.blue;
+                //}
+                break;
+                case CellState.DOOR:
+                {
+                    color = Color.black;
+                }
+                break;
+            }
+            Handles.DrawSolidRectangleWithOutline(new Rect(x, y, 1, 1), color, color);
         }
     }
 }
