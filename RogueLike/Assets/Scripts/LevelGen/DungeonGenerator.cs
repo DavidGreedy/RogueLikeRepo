@@ -177,6 +177,23 @@ public class DungeonGenerator : MonoBehaviour
                 }
             }
         }
+
+        public CellNode RandomCell(CellState targetState)
+        {
+            bool pointOk = false;
+
+            int x = 0;
+            int y = 0;
+
+            while (!pointOk)
+            {
+                x = (int)Random.Range(0, m_width);
+                y = (int)Random.Range(0, m_height);
+
+                pointOk = ContainsElement(x, y) && m_cells[x, y].state == targetState;
+            }
+            return m_cells[x, y];
+        }
     }
 
     void Start()
@@ -225,29 +242,12 @@ public class DungeonGenerator : MonoBehaviour
         }
     }
 
-    CellNode RandomEmptyCell()
-    {
-        bool pointOk = false;
-
-        int x = 0;
-        int y = 0;
-
-        while (!pointOk)
-        {
-            x = (int)Random.Range(0, m_width);
-            y = (int)Random.Range(0, m_height);
-
-            pointOk = m_cellMap.ContainsElement(x, y);
-        }
-
-        return new CellNode(x, y);
-    }
 
     void PlacePath()
     {
         //TODO: Space the corridors 1 cell away from each other (THIS IS DONE BY MULTIPLYING EVERYTHING BY TWO)
 
-        m_rootNode = RandomEmptyCell();
+        m_rootNode = m_cellMap.RandomCell(CellState.EMPTY);
         Carve(m_rootNode, 0);
         //m_rootNode.Reduce(CellState.DOOR);
 
@@ -259,6 +259,10 @@ public class DungeonGenerator : MonoBehaviour
     {
         /*
          * TODO: Need to check to see if the root node only has one child and recurse until it has more than one as the root node is often a dead end.
+        */
+
+        /* 
+        *  TODO: Maybe prioratise nodes with more neighbours / ones with the most connections to increase the amount of cross / t junctions
         */
 
         //ADD NODE
@@ -322,7 +326,6 @@ public class DungeonGenerator : MonoBehaviour
         return new Box(x, y, w, h);
     }
 
-
     //void ExportMap()
     //{
     //    StreamWriter sw = new StreamWriter("MAP.txt");
@@ -376,8 +379,7 @@ public class DungeonGenerator : MonoBehaviour
                 {
                     if (pathNodes[i].parent != null)
                     {
-                        Gizmos.DrawLine(pathNodes[i].Vector2 + Vector2.one * 0.5f,
-                            pathNodes[i].parent.Vector2 + Vector2.one * 0.5f);
+                        Gizmos.DrawLine((pathNodes[i].Vector2 * 2f) + Vector2.one, (pathNodes[i].parent.Vector2 * 2f) + Vector2.one);
                     }
                 }
             }
@@ -563,10 +565,10 @@ public class DungeonGenerator : MonoBehaviour
                     color = Color.red;
                 }
                 break;
-                //case CellState.CORRIDOR:
-                //{
-                //    color = Color.blue;
-                //}
+                case CellState.CORRIDOR:
+                {
+                    color = Color.blue;
+                }
                 break;
                 case CellState.DOOR:
                 {
@@ -574,7 +576,14 @@ public class DungeonGenerator : MonoBehaviour
                 }
                 break;
             }
-            Handles.DrawSolidRectangleWithOutline(new Rect(x, y, 1, 1), color, color);
+            if (state == CellState.CORRIDOR)
+            {
+                Handles.DrawSolidRectangleWithOutline(new Rect(x * 2, y * 2, 1, 1), color, color);
+            }
+            else
+            {
+                Handles.DrawSolidRectangleWithOutline(new Rect(x * 2, y * 2, 2, 2), color, color);
+            }
         }
     }
 }
