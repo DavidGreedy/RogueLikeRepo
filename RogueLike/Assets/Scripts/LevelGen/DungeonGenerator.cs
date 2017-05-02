@@ -21,7 +21,8 @@ public class DungeonGenerator : MonoBehaviour
     [SerializeField]
     private SpriteSheet m_dungeonSprites;
 
-    private SpriteRenderer[,] sprites;
+    [SerializeField]
+    private Material material;
 
     private enum CellState
     {
@@ -319,66 +320,26 @@ public class DungeonGenerator : MonoBehaviour
 
         print(DateTime.Now - startTime);
 
-        sprites = new SpriteRenderer[m_width, m_height];
+        List<Vector3> vertices = new List<Vector3>();
 
-        int cellValue = 0;
-        int index = 0;
-        try
+        for (int i = 0; i < pathNodes.Count; i++)
         {
-            for (int y = 0; y < m_height; y++)
-            {
-                for (int x = 0; x < m_width; x++)
-                {
-                    CellNode cell = m_cellMap.GetCell(x, y);
-                    if (cell != null)
-                    {
-                        cellValue = 0;
-                        CellNode[] neighbours = m_cellMap.GetMatchingCellNeighbours(x, y);
-                        if (cell.state == CellState.CORRIDOR)
-                        {
-                            for (int i = 0; i < neighbours.Length; i++)
-                            {
-                                if (neighbours[i] != null && ((cell.parent != null && neighbours[i] == cell.parent) || (!cell.IsLeaf && cell.children.ToList().Contains(neighbours[i]))))
-                                {
-                                    cellValue |= (1 << i);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            for (int i = 0; i < neighbours.Length; i++)
-                            {
-                                if (neighbours[i] != null)
-                                {
-                                    cellValue |= (1 << i);
-                                }
-                            }
-                        }
-
-                        GameObject g = new GameObject();
-                        g.transform.position = new Vector3(x + 0.5f, y + 0.5f, 0);
-                        sprites[x, y] = g.AddComponent<SpriteRenderer>();
-
-                        if (cell.state == CellState.CORRIDOR)
-                        {
-                            if (!pathNodes.Contains(cell))
-                            {
-                                cellValue = 0;
-                            }
-                        }
-                        index = SpritePicker.GetSpriteNumber(cellValue);
-                        sprites[x, y].sprite = m_dungeonSprites[index];
-
-                    }
-                }
-            }
+            vertices.AddRange(pathNodes[i].PathQuad());
         }
-        catch (Exception)
+        int[] indices = new int[vertices.Count];
+
+        for (int i = 0; i < vertices.Count; i++)
         {
-
-            throw;
+            indices[i] = i;
         }
-        //LoadMap();
+
+        MeshRenderer mr = gameObject.AddComponent<MeshRenderer>();
+        mr.material = material;
+
+        MeshFilter mf = gameObject.AddComponent<MeshFilter>();
+
+        mf.mesh = new Mesh() { vertices = vertices.ToArray(), triangles = indices };
+        mf.mesh.RecalculateNormals();
     }
 
     void PlaceRooms()
@@ -577,8 +538,8 @@ public class DungeonGenerator : MonoBehaviour
                 {
                     if (pathNodes[i].parent != null)
                     {
-                        //Gizmos.DrawLine((pathNodes[i].Vector2 * 2f) + Vector2.one, (pathNodes[i].parent.Vector2 * 2f) + Vector2.one);
-                        Gizmos.DrawLine((pathNodes[i].Vector2) + Vector2.one * 0.5f, (pathNodes[i].parent.Vector2) + Vector2.one * 0.5f);
+                        Gizmos.DrawLine((pathNodes[i].Vector2 * 2f) + Vector2.one, (pathNodes[i].parent.Vector2 * 2f) + Vector2.one);
+                        //Gizmos.DrawLine((pathNodes[i].Vector2) + Vector2.one * 0.5f, (pathNodes[i].parent.Vector2) + Vector2.one * 0.5f);
                     }
                 }
             }
@@ -789,6 +750,53 @@ public class DungeonGenerator : MonoBehaviour
                 //Handles.DrawSolidRectangleWithOutline(new Rect(x * 2, y * 2, 1, 1), color, color);
 
             }
+        }
+
+        public Vector3[] Quad()
+        {
+            Vector3[] quad = new Vector3[6];
+            float localx = x * 2;
+            float localy = y * 2;
+
+            quad[0] = new Vector3(localx, localy + 1, 0);
+            quad[1] = new Vector3(localx + 1, localy + 1, 0);
+            quad[2] = new Vector3(localx + 1, localy, 0);
+            quad[3] = new Vector3(localx, localy + 1, 0);
+            quad[4] = new Vector3(localx + 1, localy, 0);
+            quad[5] = new Vector3(localx, localy, 0);
+
+            return quad;
+        }
+
+        public List<Vector3> PathQuad()
+        {
+            List<Vector3> quad = new List<Vector3>();
+            float localx = x * 2;
+            float localy = y * 2;
+
+            quad.Add(new Vector3(localx, localy + 1, 0));
+            quad.Add(new Vector3(localx + 1, localy + 1, 0));
+            quad.Add(new Vector3(localx + 1, localy, 0));
+            quad.Add(new Vector3(localx, localy + 1, 0));
+            quad.Add(new Vector3(localx + 1, localy, 0));
+            quad.Add(new Vector3(localx, localy, 0));
+
+            if (parent == null)
+            {
+                return quad;
+            }
+
+            float midx = (x + (parent.x - x) * 0.5f) * 2;
+            float midy = (y + (parent.y - y) * 0.5f) * 2;
+
+            quad.Add(new Vector3(midx, midy + 1, 0));
+            quad.Add(new Vector3(midx + 1, midy + 1, 0));
+            quad.Add(new Vector3(midx + 1, midy, 0));
+            quad.Add(new Vector3(midx, midy + 1, 0));
+            quad.Add(new Vector3(midx + 1, midy, 0));
+            quad.Add(new Vector3(midx, midy, 0));
+
+            return quad;
         }
     }
 }
