@@ -33,6 +33,24 @@ public class DungeonGenerator : MonoBehaviour
         private CellNode[,] m_cells;
         private int m_width, m_height;
 
+        public bool wrap = false;
+
+        int mod(int x, int m)
+        {
+            int r = x % m;
+            return r < 0 ? r + m : r;
+        }
+
+        private int WrapX(int x)
+        {
+            return wrap ? mod(x, m_width) : x;
+        }
+
+        private int WrapY(int y)
+        {
+            return wrap ? mod(y, m_height) : y;
+        }
+
         public CellMap(int width, int height)
         {
             this.m_width = width;
@@ -48,7 +66,7 @@ public class DungeonGenerator : MonoBehaviour
             {
                 for (int x = 0; x < m_width; x++)
                 {
-                    m_cells[x, y] = new CellNode(x, y);
+                    m_cells[WrapX(x), WrapY(y)] = new CellNode(x, y);
                 }
             }
         }
@@ -79,33 +97,25 @@ public class DungeonGenerator : MonoBehaviour
                     case 0:
                     {
                         if (y < m_height - 1)
-                        {
-                            return m_cells[x, y + 1];
-                        }
+                        { return m_cells[WrapX(x), WrapY(y + 1)]; }
                     }
                     break;
                     case 1:
                     {
                         if (x < m_width - 1)
-                        {
-                            return m_cells[x + 1, y];
-                        }
+                        { return m_cells[WrapX(x + 1), WrapY(y)]; }
                     }
                     break;
                     case 2:
                     {
                         if (y > 0)
-                        {
-                            return m_cells[x, y - 1];
-                        }
+                        { return m_cells[WrapX(x), WrapY(y - 1)]; }
                     }
                     break;
                     case 3:
                     {
                         if (x > 0)
-                        {
-                            return m_cells[x - 1, y];
-                        }
+                        { return m_cells[WrapX(x - 1), WrapY(y)]; }
                     }
                     break;
                 }
@@ -116,25 +126,14 @@ public class DungeonGenerator : MonoBehaviour
         public CellNode[] GetCellNeighbours(int x, int y)
         {
             CellNode[] neighbours = new CellNode[4];
-            if (y < m_height - 1)
-            {
-                neighbours[0] = m_cells[x, y + 1];
-            }
 
-            if (x < m_width - 1)
-            {
-                neighbours[1] = m_cells[x + 1, y];
-            }
+            neighbours[0] = m_cells[WrapX(x), WrapY(y + 1)];
 
-            if (y > 0)
-            {
-                neighbours[2] = m_cells[x, y - 1];
-            }
+            neighbours[1] = m_cells[WrapX(x + 1), WrapY(y)];
 
-            if (x > 0)
-            {
-                neighbours[3] = m_cells[x - 1, y];
-            }
+            neighbours[2] = m_cells[WrapX(x), WrapY(y - 1)];
+
+            neighbours[3] = m_cells[WrapX(x - 1), WrapY(y)];
 
             return neighbours;
         }
@@ -145,7 +144,7 @@ public class DungeonGenerator : MonoBehaviour
             {
                 for (int i = x; i < x + w; i++)
                 {
-                    m_cells[i, j].state = state;
+                    m_cells[WrapX(i), WrapY(j)].state = state;
                 }
             }
         }
@@ -166,7 +165,13 @@ public class DungeonGenerator : MonoBehaviour
             {
                 for (int x = xStart; x < xEnd; x++)
                 {
-                    if (m_cells[x, y].state == state)
+                    int t = WrapX(x);
+                    int p = WrapY(y);
+                    if (p < 0 || t < 0)
+                    {
+                        print(1);
+                    }
+                    if (m_cells[t, p].state == state)
                     {
                         return true;
                     }
@@ -195,8 +200,8 @@ public class DungeonGenerator : MonoBehaviour
 
             while (!pointOk)
             {
-                x = (int)Random.Range(0, m_width);
-                y = (int)Random.Range(0, m_height);
+                x = Random.Range(0, m_width);
+                y = Random.Range(0, m_height);
 
                 pointOk = ContainsElement(x, y) && m_cells[x, y].state == targetState;
             }
@@ -214,6 +219,7 @@ public class DungeonGenerator : MonoBehaviour
         DateTime startTime = DateTime.Now;
 
         m_cellMap = new CellMap((int)m_width, (int)m_height);
+        m_cellMap.wrap = true;
 
         PlaceRooms();
         PlacePath();
@@ -230,35 +236,35 @@ public class DungeonGenerator : MonoBehaviour
 
         int index = 0;
 
-        while (index < 1000)
+        while (index < 10000)
         {
             nextRoom = CreateRandomRoom((int)m_width, (int)m_height);
-            bool mapContainsRoom = m_cellMap.ContainsElements(nextRoom.x - 1, nextRoom.y - 1, nextRoom.x + nextRoom.w + 1, nextRoom.y + nextRoom.h + 1);
+            //bool mapContainsRoom = m_cellMap.ContainsElements(nextRoom.x - 1, nextRoom.y - 1, nextRoom.x + nextRoom.w + 1, nextRoom.y + nextRoom.h + 1);
             bool roomOk = !m_cellMap.CheckState(nextRoom.x - 1, nextRoom.y - 1, nextRoom.x + nextRoom.w + 1, nextRoom.y + nextRoom.h + 1, CellState.ROOM);
 
             index = 0;
-            while (!mapContainsRoom || !roomOk)
+            while (!roomOk && index < 10000)
             {
                 nextRoom = CreateRandomRoom((int)m_width, (int)m_height);
-                mapContainsRoom = m_cellMap.ContainsElements(nextRoom.x - 1, nextRoom.y - 1, nextRoom.x + nextRoom.w + 1, nextRoom.y + nextRoom.h + 1);
+                //mapContainsRoom = m_cellMap.ContainsElements(nextRoom.x - 1, nextRoom.y - 1, nextRoom.x + nextRoom.w + 1, nextRoom.y + nextRoom.h + 1);
                 roomOk = !m_cellMap.CheckState(nextRoom.x - 1, nextRoom.y - 1, nextRoom.x + nextRoom.w + 1, nextRoom.y + nextRoom.h + 1, CellState.ROOM);
                 index++;
             }
-
-            rooms.Add(nextRoom);
-            m_cellMap.SetBox(nextRoom.x, nextRoom.y, nextRoom.w, nextRoom.h, CellState.ROOM);
+            if (index < 10000)
+            {
+                rooms.Add(nextRoom);
+                m_cellMap.SetBox(nextRoom.x, nextRoom.y, nextRoom.w, nextRoom.h, CellState.ROOM);
+            }
         }
 
         //PLACE DOORS HERE USING THE LIST OF ROOMS.
         PlaceDoors(rooms);
-
     }
 
     void PlaceDoors(List<Box> rooms)
     {
         for (int i = 0; i < rooms.Count; i++)
         {
-
             int doorx = Random.Range(rooms[i].x + 1, rooms[i].x + rooms[i].w - 1);
             int doory = Random.Range(rooms[i].y + 1, rooms[i].y + rooms[i].h - 1);
 
@@ -284,9 +290,10 @@ public class DungeonGenerator : MonoBehaviour
 
     void PlacePath()
     {
-        //TODO: Space the corridors 1 cell away from each other (THIS IS DONE BY MULTIPLYING EVERYTHING BY TWO)
+        //TODO: Space the corridors 1 cell away from each other and be able to save the result
 
-        m_rootNode = m_cellMap.RandomCell(CellState.EMPTY);
+        m_rootNode = m_cellMap.GetCell(0, 0);
+        //m_cellMap.RandomCell(CellState.EMPTY));
         Carve(m_rootNode, 0);
         m_rootNode.Reduce(CellState.DOOR);
 
@@ -359,8 +366,8 @@ public class DungeonGenerator : MonoBehaviour
         w = Random.Range(5, 15);
         h = Random.Range(5, 15);
 
-        x = (int)Random.Range(1, width - w);
-        y = (int)Random.Range(1, height - h);
+        x = Random.Range(0, width) % width;
+        y = Random.Range(0, height) % height;
 
         return new Box(x, y, w, h);
     }
