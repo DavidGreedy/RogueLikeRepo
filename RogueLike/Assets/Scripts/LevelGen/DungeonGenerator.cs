@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -16,6 +17,11 @@ public class DungeonGenerator : MonoBehaviour
     private List<CellNode> pathNodes;
 
     private CellNode m_rootNode;
+
+    [SerializeField]
+    private SpriteSheet m_dungeonSprites;
+
+    private SpriteRenderer[,] sprites;
 
     private enum CellState
     {
@@ -97,25 +103,33 @@ public class DungeonGenerator : MonoBehaviour
                     case 0:
                     {
                         if (y < m_height - 1)
-                        { return m_cells[WrapX(x), WrapY(y + 1)]; }
+                        {
+                            return m_cells[WrapX(x), WrapY(y + 1)];
+                        }
                     }
                     break;
                     case 1:
                     {
                         if (x < m_width - 1)
-                        { return m_cells[WrapX(x + 1), WrapY(y)]; }
+                        {
+                            return m_cells[WrapX(x + 1), WrapY(y)];
+                        }
                     }
                     break;
                     case 2:
                     {
                         if (y > 0)
-                        { return m_cells[WrapX(x), WrapY(y - 1)]; }
+                        {
+                            return m_cells[WrapX(x), WrapY(y - 1)];
+                        }
                     }
                     break;
                     case 3:
                     {
                         if (x > 0)
-                        { return m_cells[WrapX(x - 1), WrapY(y)]; }
+                        {
+                            return m_cells[WrapX(x - 1), WrapY(y)];
+                        }
                     }
                     break;
                 }
@@ -123,7 +137,7 @@ public class DungeonGenerator : MonoBehaviour
             return null;
         }
 
-        public CellNode[] GetCellNeighbours(int x, int y)
+        public CellNode[] GetImmediateCellNeighbours(int x, int y)
         {
             CellNode[] neighbours = new CellNode[4];
 
@@ -136,6 +150,85 @@ public class DungeonGenerator : MonoBehaviour
             neighbours[3] = m_cells[WrapX(x - 1), WrapY(y)];
 
             return neighbours;
+        }
+
+        public CellNode[] GetCellNeighbours(int x, int y)
+        {
+            CellNode[] neighbours = new CellNode[8];
+
+            neighbours[0] = m_cells[WrapX(x), WrapY(y + 1)];
+
+            neighbours[2] = m_cells[WrapX(x + 1), WrapY(y)];
+
+            neighbours[4] = m_cells[WrapX(x), WrapY(y - 1)];
+
+            neighbours[6] = m_cells[WrapX(x - 1), WrapY(y)];
+
+            if (neighbours[0] != null && neighbours[2] != null)
+            {
+                neighbours[1] = m_cells[WrapX(x + 1), WrapY(y + 1)];
+            }
+
+            if (neighbours[2] != null && neighbours[4] != null)
+            {
+                neighbours[3] = m_cells[WrapX(x + 1), WrapY(y - 1)];
+            }
+
+            if (neighbours[4] != null && neighbours[6] != null)
+            {
+                neighbours[5] = m_cells[WrapX(x - 1), WrapY(y - 1)];
+            }
+
+            if (neighbours[6] != null && neighbours[0] != null)
+            {
+                neighbours[7] = m_cells[WrapX(x - 1), WrapY(y + 1)];
+            }
+
+            return neighbours;
+        }
+
+        public CellNode[] GetMatchingCellNeighbours(int x, int y)
+        {
+            CellNode[] allNeighbours = new CellNode[8];
+
+            allNeighbours[0] = m_cells[WrapX(x), WrapY(y + 1)];
+            allNeighbours[1] = m_cells[WrapX(x + 1), WrapY(y + 1)];
+            allNeighbours[2] = m_cells[WrapX(x + 1), WrapY(y)];
+            allNeighbours[3] = m_cells[WrapX(x + 1), WrapY(y - 1)];
+            allNeighbours[4] = m_cells[WrapX(x), WrapY(y - 1)];
+            allNeighbours[5] = m_cells[WrapX(x - 1), WrapY(y - 1)];
+            allNeighbours[6] = m_cells[WrapX(x - 1), WrapY(y)];
+            allNeighbours[7] = m_cells[WrapX(x - 1), WrapY(y + 1)];
+
+            CellNode[] matchingNeighbours = new CellNode[8];
+            CellState state = m_cells[x, y].state;
+
+            matchingNeighbours[0] = (state == allNeighbours[0].state) ? allNeighbours[0] : null;
+            matchingNeighbours[2] = (state == allNeighbours[2].state) ? allNeighbours[2] : null;
+            matchingNeighbours[4] = (state == allNeighbours[4].state) ? allNeighbours[4] : null;
+            matchingNeighbours[6] = (state == allNeighbours[6].state) ? allNeighbours[6] : null;
+
+            if (matchingNeighbours[0] != null && matchingNeighbours[2] != null && allNeighbours[1] != null && allNeighbours[1].state == state)
+            {
+                matchingNeighbours[1] = allNeighbours[1];
+            }
+
+            if (matchingNeighbours[2] != null && matchingNeighbours[4] != null && allNeighbours[3] != null && allNeighbours[3].state == state)
+            {
+                matchingNeighbours[3] = allNeighbours[3];
+            }
+
+            if (matchingNeighbours[4] != null && matchingNeighbours[6] != null && allNeighbours[5] != null && allNeighbours[5].state == state)
+            {
+                matchingNeighbours[5] = allNeighbours[5];
+            }
+
+            if (matchingNeighbours[6] != null && matchingNeighbours[0] != null && allNeighbours[7] != null && allNeighbours[7].state == state)
+            {
+                matchingNeighbours[7] = allNeighbours[7];
+            }
+
+            return matchingNeighbours;
         }
 
         public void SetBox(int x, int y, int w, int h, CellState state)
@@ -226,6 +319,65 @@ public class DungeonGenerator : MonoBehaviour
 
         print(DateTime.Now - startTime);
 
+        sprites = new SpriteRenderer[m_width, m_height];
+
+        int cellValue = 0;
+        int index = 0;
+        try
+        {
+            for (int y = 0; y < m_height; y++)
+            {
+                for (int x = 0; x < m_width; x++)
+                {
+                    CellNode cell = m_cellMap.GetCell(x, y);
+                    if (cell != null)
+                    {
+                        cellValue = 0;
+                        CellNode[] neighbours = m_cellMap.GetMatchingCellNeighbours(x, y);
+                        if (cell.state == CellState.CORRIDOR)
+                        {
+                            for (int i = 0; i < neighbours.Length; i++)
+                            {
+                                if (neighbours[i] != null && ((cell.parent != null && neighbours[i] == cell.parent) || (!cell.IsLeaf && cell.children.ToList().Contains(neighbours[i]))))
+                                {
+                                    cellValue |= (1 << i);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            for (int i = 0; i < neighbours.Length; i++)
+                            {
+                                if (neighbours[i] != null)
+                                {
+                                    cellValue |= (1 << i);
+                                }
+                            }
+                        }
+
+                        GameObject g = new GameObject();
+                        g.transform.position = new Vector3(x + 0.5f, y + 0.5f, 0);
+                        sprites[x, y] = g.AddComponent<SpriteRenderer>();
+
+                        if (cell.state == CellState.CORRIDOR)
+                        {
+                            if (!pathNodes.Contains(cell))
+                            {
+                                cellValue = 0;
+                            }
+                        }
+                        index = SpritePicker.GetSpriteNumber(cellValue);
+                        sprites[x, y].sprite = m_dungeonSprites[index];
+
+                    }
+                }
+            }
+        }
+        catch (Exception)
+        {
+
+            throw;
+        }
         //LoadMap();
     }
 
@@ -292,8 +444,8 @@ public class DungeonGenerator : MonoBehaviour
     {
         //TODO: Space the corridors 1 cell away from each other and be able to save the result
 
-        m_rootNode = m_cellMap.GetCell(0, 0);
-        //m_cellMap.RandomCell(CellState.EMPTY));
+        //m_rootNode = m_cellMap.GetCell(0, 0);
+        m_rootNode = m_cellMap.RandomCell(CellState.EMPTY);
         Carve(m_rootNode, 0);
         m_rootNode.Reduce(CellState.DOOR);
 
@@ -327,7 +479,7 @@ public class DungeonGenerator : MonoBehaviour
             targetNode.state = CellState.CORRIDOR;
         }
 
-        CellNode[] possibleChildren = m_cellMap.GetCellNeighbours(targetNode.x, targetNode.y);
+        CellNode[] possibleChildren = m_cellMap.GetImmediateCellNeighbours(targetNode.x, targetNode.y);
 
         List<int> randomIndices = new List<int>();
 
@@ -416,7 +568,7 @@ public class DungeonGenerator : MonoBehaviour
     {
         if (Application.isPlaying)
         {
-            m_cellMap.DebugDraw();
+            //m_cellMap.DebugDraw();
 
             Gizmos.color = Color.green;
             if (pathNodes != null)
@@ -425,7 +577,8 @@ public class DungeonGenerator : MonoBehaviour
                 {
                     if (pathNodes[i].parent != null)
                     {
-                        Gizmos.DrawLine((pathNodes[i].Vector2 * 2f) + Vector2.one, (pathNodes[i].parent.Vector2 * 2f) + Vector2.one);
+                        //Gizmos.DrawLine((pathNodes[i].Vector2 * 2f) + Vector2.one, (pathNodes[i].parent.Vector2 * 2f) + Vector2.one);
+                        Gizmos.DrawLine((pathNodes[i].Vector2) + Vector2.one * 0.5f, (pathNodes[i].parent.Vector2) + Vector2.one * 0.5f);
                     }
                 }
             }
@@ -509,7 +662,9 @@ public class DungeonGenerator : MonoBehaviour
 
         public CellNode parent;
 
-        private CellNode[] children;
+        public  CellNode[] children;
+
+        public int cellNeighbourValue;
 
         public CellNode(int x, int y)
         {
@@ -624,11 +779,15 @@ public class DungeonGenerator : MonoBehaviour
             }
             if (state == CellState.CORRIDOR)
             {
-                Handles.DrawSolidRectangleWithOutline(new Rect(x * 2, y * 2, 1, 1), color, color);
+                Handles.DrawSolidRectangleWithOutline(new Rect(x, y, 1, 1), color, color);
+                //Handles.DrawSolidRectangleWithOutline(new Rect(x * 2, y * 2, 1, 1), color, color);
+
             }
             else
             {
-                Handles.DrawSolidRectangleWithOutline(new Rect(x * 2, y * 2, 2, 2), color, color);
+                Handles.DrawSolidRectangleWithOutline(new Rect(x, y, 1, 1), color, color);
+                //Handles.DrawSolidRectangleWithOutline(new Rect(x * 2, y * 2, 1, 1), color, color);
+
             }
         }
     }
