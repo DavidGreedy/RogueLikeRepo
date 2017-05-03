@@ -739,23 +739,31 @@ public class DungeonGenerator : MonoBehaviour
         public List<Vector3> PathQuad()
         {
             List<Vector3> quad = new List<Vector3>();
-            float localx = x * 2;
-            float localy = y * 2;
 
-            quad.Add(new Vector3(localx, localy + 1, 0));
-            quad.Add(new Vector3(localx + 1, localy + 1, 0));
-            quad.Add(new Vector3(localx + 1, localy, 0));
-            quad.Add(new Vector3(localx, localy + 1, 0));
-            quad.Add(new Vector3(localx + 1, localy, 0));
-            quad.Add(new Vector3(localx, localy, 0));
+            float midx = (x + (parent.x - x) * 0.5f) * 2;
+            float midy = (y + (parent.y - y) * 0.5f) * 2;
+
+            if (state != CellState.DOOR)
+            {
+                float localx = x * 2;
+                float localy = y * 2;
+
+                quad.Add(new Vector3(localx, localy + 1, 0));
+                quad.Add(new Vector3(localx + 1, localy + 1, 0));
+                quad.Add(new Vector3(localx + 1, localy, 0));
+                quad.Add(new Vector3(localx, localy + 1, 0));
+                quad.Add(new Vector3(localx + 1, localy, 0));
+                quad.Add(new Vector3(localx, localy, 0));
+            }
+            else
+            {
+                //Init door positions here.
+            }
 
             if (parent == null)
             {
                 return quad;
             }
-
-            float midx = (x + (parent.x - x) * 0.5f) * 2;
-            float midy = (y + (parent.y - y) * 0.5f) * 2;
 
             quad.Add(new Vector3(midx, midy + 1, 0));
             quad.Add(new Vector3(midx + 1, midy + 1, 0));
