@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -24,8 +22,6 @@ public class DungeonGenerator : MonoBehaviour
 
     [SerializeField]
     private Material material;
-
-
 
     private enum CellState
     {
@@ -83,7 +79,7 @@ public class DungeonGenerator : MonoBehaviour
 
         public CellNode GetCell(int x, int y)
         {
-            if (ContainsElement(x, y))
+            if (InRange(x, y))
             {
                 return m_cells[x, y];
             }
@@ -92,7 +88,7 @@ public class DungeonGenerator : MonoBehaviour
 
         public void SetCellState(int x, int y, CellState state)
         {
-            if (ContainsElement(x, y))
+            if (InRange(x, y))
             {
                 m_cells[x, y].state = state;
             }
@@ -100,70 +96,174 @@ public class DungeonGenerator : MonoBehaviour
 
         public CellNode GetCellNeighbour(int x, int y, int index) // 0 = N, 1 = E, 2 = S, 3 = W
         {
-            if (ContainsElement(x, y) && index < 4)
+            int lx, nx, ux, ly, ny, uy;
+
+            lx = WrapX(x - 1);
+            nx = WrapX(x);
+            ux = WrapX(x + 1);
+
+            ly = WrapY(y - 1);
+            ny = WrapY(y);
+            uy = WrapY(y + 1);
+
+            BitSet checkBitSet = new BitSet();
+
+            checkBitSet.Set(0, uy < m_height);
+            checkBitSet.Set(2, ux < m_width);
+            checkBitSet.Set(4, ly > 0);
+            checkBitSet.Set(6, lx > 0);
+
+            checkBitSet.Set(1, checkBitSet.Get(0) && checkBitSet.Get(2));
+            checkBitSet.Set(3, checkBitSet.Get(2) && checkBitSet.Get(4));
+            checkBitSet.Set(5, checkBitSet.Get(4) && checkBitSet.Get(6));
+            checkBitSet.Set(7, checkBitSet.Get(6) && checkBitSet.Get(0));
+
+            try
             {
+
                 switch (index)
                 {
                     case 0:
                     {
-                        if (y < m_height - 1)
+                        if (checkBitSet.Get(0))
                         {
-                            return m_cells[WrapX(x), WrapY(y + 1)];
+                            return m_cells[nx, uy];
                         }
                     }
                     break;
                     case 1:
                     {
-                        if (x < m_width - 1)
+                        if (checkBitSet.Get(1))
                         {
-                            return m_cells[WrapX(x + 1), WrapY(y)];
+                            return m_cells[ux, uy];
                         }
                     }
                     break;
                     case 2:
                     {
-                        if (y > 0)
+                        if (checkBitSet.Get(2))
                         {
-                            return m_cells[WrapX(x), WrapY(y - 1)];
+                            return m_cells[ux, ny];
                         }
                     }
                     break;
                     case 3:
                     {
-                        if (x > 0)
+                        if (checkBitSet.Get(3))
                         {
-                            return m_cells[WrapX(x - 1), WrapY(y)];
+                            return m_cells[ux, ly];
+                        }
+                    }
+                    break;
+                    case 4:
+                    {
+                        if (checkBitSet.Get(4))
+                        {
+                            return m_cells[nx, ly];
+                        }
+                    }
+                    break;
+                    case 5:
+                    {
+                        if (checkBitSet.Get(5))
+                        {
+                            return m_cells[lx, ly];
+                        }
+                    }
+                    break;
+                    case 6:
+                    {
+                        if (checkBitSet.Get(6))
+                        {
+                            return m_cells[lx, ny];
+                        }
+                    }
+                    break;
+                    case 7:
+                    {
+                        if (checkBitSet.Get(7))
+                        {
+                            return m_cells[lx, uy];
                         }
                     }
                     break;
                 }
             }
+            catch (Exception)
+            {
+
+                throw;
+            }
             return null;
+        }
+
+        public void SetCellValue(int x, int y)
+        {
+            int lx, nx, ux, ly, ny, uy;
+
+            lx = WrapX(x - 1);
+            nx = WrapX(x);
+            ux = WrapX(x + 1);
+
+            ly = WrapY(y - 1);
+            ny = WrapY(y);
+            uy = WrapY(y + 1);
+
+            BitSet checkBitSet = new BitSet();
+
+            checkBitSet.Set(0, uy < m_height);
+            checkBitSet.Set(2, ux < m_width);
+            checkBitSet.Set(4, ly > 0);
+            checkBitSet.Set(6, lx > 0);
+
+            checkBitSet.Set(1, checkBitSet.Get(0) && checkBitSet.Get(2));
+            checkBitSet.Set(3, checkBitSet.Get(2) && checkBitSet.Get(4));
+            checkBitSet.Set(5, checkBitSet.Get(4) && checkBitSet.Get(6));
+            checkBitSet.Set(7, checkBitSet.Get(6) && checkBitSet.Get(0));
+
+            checkBitSet.Set(0, m_cells[nx, uy] == null);
+            checkBitSet.Set(0, m_cells[ux, uy] == null);
+            checkBitSet.Set(0, m_cells[ux, ny] == null);
+            checkBitSet.Set(0, m_cells[ux, ly] == null);
+            checkBitSet.Set(0, m_cells[nx, ly] == null);
+            checkBitSet.Set(0, m_cells[lx, ly] == null);
+            checkBitSet.Set(0, m_cells[lx, ny] == null);
+            checkBitSet.Set(0, m_cells[lx, uy] == null);
+
+            m_cells[nx, ny].cellNeighbourValue = checkBitSet.Bits;
+
+        }
+        public void SetCellValues()
+        {
+            for (int y = 0; y < m_height; y++)
+            {
+                for (int x = 0; x < m_width; x++)
+                {
+                    SetCellValue(x, y);
+                }
+            }
         }
 
         public CellNode[] GetImmediateCellNeighbours(int x, int y)
         {
             CellNode[] neighbours = new CellNode[4];
 
-            neighbours[0] = y >= m_height - 1 ? null : m_cells[WrapX(x), WrapY(y + 1)];
-
-            neighbours[1] = x >= m_width - 1 ? null : m_cells[WrapX(x + 1), WrapY(y)];
-
-            neighbours[2] = y <= 1 ? null : m_cells[WrapX(x), WrapY(y - 1)];
-
-            neighbours[3] = x < 1 ? null : m_cells[WrapX(x - 1), WrapY(y)];
+            neighbours[0] = (y >= m_height - 1 && !wrap) ? null : m_cells[WrapX(x), WrapY(y + 1)];
+            neighbours[1] = (x >= m_width - 1 && !wrap) ? null : m_cells[WrapX(x + 1), WrapY(y)];
+            neighbours[2] = (y <= 1 && !wrap) ? null : m_cells[WrapX(x), WrapY(y - 1)];
+            neighbours[3] = (x < 1 && !wrap) ? null : m_cells[WrapX(x - 1), WrapY(y)];
 
             return neighbours;
         }
 
-        public bool ContainsElement(int x, int y) // if cells[x,y] is within the array bounds
+        private bool InRange(int x, int y) // if cells[x,y] is within the array bounds
         {
             return (x >= 0 && y >= 0 && x < m_width && y < m_height);
         }
 
         public void SetBox(int x, int y, int w, int h, CellState state)
         {
-            if (wrap || (ContainsElement(x, y) && ContainsElement(x + w, y + h)))
+            if (wrap || (InRange(x, y) && InRange(x + w, y + h)))
             {
                 for (int j = y; j < y + h; j++)
                 {
@@ -177,12 +277,12 @@ public class DungeonGenerator : MonoBehaviour
 
         public bool ContainsElements(int xStart, int yStart, int xEnd, int yEnd)
         {
-            return ContainsElement(xStart, yStart) && ContainsElement(xEnd, yEnd);
+            return InRange(xStart, yStart) && InRange(xEnd, yEnd);
         }
 
         public bool CheckState(int xStart, int yStart, int xEnd, int yEnd, CellState state)
         {
-            if (!wrap && !ContainsElement(xStart, yStart) || !ContainsElement(xEnd, yEnd))
+            if (!wrap && (!InRange(xStart, yStart) || !InRange(xEnd, yEnd)))
             {
                 return true;
             }
@@ -222,16 +322,10 @@ public class DungeonGenerator : MonoBehaviour
                 x = Random.Range(0, m_width);
                 y = Random.Range(0, m_height);
 
-                pointOk = ContainsElement(x, y) && m_cells[x, y].state == targetState;
+                pointOk = InRange(x, y) && m_cells[x, y].state == targetState;
             }
             return m_cells[x, y];
         }
-    }
-
-    int mod(int x, int m)
-    {
-        int r = x % m;
-        return r < 0 ? r + m : r;
     }
 
     void Start()
@@ -249,7 +343,11 @@ public class DungeonGenerator : MonoBehaviour
         PlaceRooms();
         PlacePath();
 
+        //m_cellMap.SetCellValues();
+
         print(DateTime.Now - startTime);
+
+        print(m_rooms.Count);
 
         List<Vector3> vertices = new List<Vector3>();
         List<Vector2> uvs = new List<Vector2>();
@@ -259,17 +357,13 @@ public class DungeonGenerator : MonoBehaviour
             vertices.AddRange(pathNodes[i].PathQuad());
         }
 
-        print(m_rooms.Count);
         for (int i = 0; i < m_rooms.Count; i++)
         {
-            int localx;
-            int localy;
-
             int sizex = (m_rooms[i].w);
             int sizey = (m_rooms[i].h);
 
-            localx = (m_rooms[i].x) * 2;
-            localy = (m_rooms[i].y) * 2;
+            int localx = (m_rooms[i].x) * 2;
+            int localy = (m_rooms[i].y) * 2;
 
             for (int y = localy; y < localy + sizey * 2 - 1; y++)
             {
@@ -300,8 +394,6 @@ public class DungeonGenerator : MonoBehaviour
         for (int i = 0; i < vertices.Count; i++)
         {
             indices[i] = i;
-
-
         }
 
         MeshRenderer mr = gameObject.AddComponent<MeshRenderer>();
@@ -408,7 +500,11 @@ public class DungeonGenerator : MonoBehaviour
             targetNode.state = CellState.CORRIDOR;
         }
 
-        CellNode[] possibleChildren = m_cellMap.GetImmediateCellNeighbours(targetNode.x, targetNode.y);
+        CellNode[] possibleChildren = new CellNode[4];
+        for (int i = 0; i < possibleChildren.Length; i++)
+        {
+            possibleChildren[i] = m_cellMap.GetCellNeighbour(targetNode.x, targetNode.y, i * 2);
+        }
 
         List<int> randomIndices = new List<int>();
 
@@ -435,6 +531,60 @@ public class DungeonGenerator : MonoBehaviour
         }
     }
 
+    class BitSet
+    {
+        private int bits;
+
+        public int Bits { get { return bits; } set { bits = value; } }
+
+        public void Set(int bit, int value)
+        {
+            bits |= value << bit;
+        }
+
+        public void Set(int bit, bool value)
+        {
+            bits |= (value ? 1 : 0) << bit;
+        }
+
+        public void Clear()
+        {
+            bits = 0;
+        }
+
+        public void Toggle(int bit)
+        {
+            bits ^= 1 << bit;
+        }
+
+        public bool Get(int bit)
+        {
+            return ((bits >> bit) & 1) == 1;
+        }
+
+        public bool[] ToArray()
+        {
+            bool[] bools = new bool[sizeof(int) * 8];
+
+            for (int i = 0; i < bools.Length; i++)
+            {
+                bools[i] = Get(i);
+            }
+
+            return bools;
+        }
+
+        public override string ToString()
+        {
+            string s = "";
+            for (int i = 0; i < sizeof(int) * 8; i++)
+            {
+                s += Get(i) ? 1 : 0;
+            }
+            return s;
+        }
+    }
+
     bool CheckNode(CellNode node)
     {
         return node != null && !node.added && (node.state == CellState.EMPTY || node.state == CellState.DOOR);
@@ -452,46 +602,6 @@ public class DungeonGenerator : MonoBehaviour
 
         return new Box(x, y, w, h);
     }
-
-    //void ExportMap()
-    //{
-    //    StreamWriter sw = new StreamWriter("MAP.txt");
-    //    sw.WriteLine(m_width);
-    //    sw.WriteLine(m_height);
-    //    string[] line = new string[m_width];
-
-    //    for (int y = (int)m_height - 1; y >= 0; y--)
-    //    {
-    //        for (int x = 0; x < m_width; x++)
-    //        {
-    //            line[x] = ((int)m_map[x, y].state).ToString();
-    //        }
-    //        sw.WriteLine(String.Join(" ", line));
-    //    }
-    //    sw.Close();
-    //}
-
-    //void LoadMap()
-    //{
-    //    StreamReader sr = new StreamReader("MAP.txt");
-
-    //    m_width = (uint)int.Parse(sr.ReadLine());
-    //    m_height = (uint)int.Parse(sr.ReadLine());
-    //    m_map = new CellNode[m_width, m_height];
-
-    //    string[] line = new string[m_width];
-    //    for (int y = (int)m_height - 1; y >= 0; y--)
-    //    {
-    //        line = sr.ReadLine().Split(' ');
-    //        for (int x = 0; x < m_width; x++)
-    //        {
-    //            m_map[x, y] = new CellNode(x, y);
-    //            int state = int.Parse(line[x]);
-    //            m_map[x, y].state = (CellState)state;
-    //        }
-    //    }
-    //    sr.Close();
-    //}
 
     private void OnDrawGizmos()
     {
