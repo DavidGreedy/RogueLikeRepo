@@ -15,16 +15,18 @@ public class WorldPosition
 
     public override bool Equals(object obj)
     {
-        if (!(obj is WorldPosition))
-            return false;
-
-        WorldPosition pos = (WorldPosition)obj;
-
-        return (pos.x == x && pos.y == y && pos.z == z);
+        return GetHashCode() == obj.GetHashCode();
     }
 
     public override int GetHashCode()
     {
-        return (x ^ y ^ z).GetHashCode();
+        unchecked
+        {
+            int hash = 47;
+            hash = hash * 227 + x.GetHashCode();
+            hash = hash * 227 + y.GetHashCode();
+            hash = hash * 227 + z.GetHashCode();
+            return hash;
+        }
     }
 }

@@ -9,7 +9,8 @@ public class Chunk : MonoBehaviour
 {
     Block[,,] blocks = new Block[chunkSize, chunkSize, chunkSize];
 
-    public static int chunkSize = 16;
+    public static int chunkSize =16;
+
     public bool update = true;
 
     public World world;

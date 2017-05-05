@@ -1,25 +1,33 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 public class World : MonoBehaviour
 {
     public Dictionary<WorldPosition, Chunk> chunks;
     public GameObject chunkPrefab;
 
+    public event Action OnGenerationComplete;
+
     void Start()
     {
         chunks = new Dictionary<WorldPosition, Chunk>();
         //chunks = new List<Chunk>();
-        for (int x = -2; x < 2; x++)
+        for (int x = 0; x < 20; x++)
         {
-            for (int y = -1; y < 1; y++)
+            for (int y = 0; y < 1; y++)
             {
-                for (int z = -1; z < 1; z++)
+                for (int z = 0; z < 20; z++)
                 {
                     CreateChunk(x * 16, y * 16, z * 16);
                 }
             }
+        }
+        if (OnGenerationComplete != null)
+        {
+            OnGenerationComplete.Invoke();
         }
     }
 
@@ -28,6 +36,8 @@ public class World : MonoBehaviour
         WorldPosition worldPos = new WorldPosition(x, y, z);
 
         GameObject newChunkObject = Instantiate(chunkPrefab, new Vector3(worldPos.x, worldPos.y, worldPos.z), Quaternion.Euler(Vector3.zero)) as GameObject;
+
+        newChunkObject.transform.parent = transform;
 
         Chunk newChunk = newChunkObject.GetComponent<Chunk>();
 
@@ -42,7 +52,7 @@ public class World : MonoBehaviour
             {
                 for (int iz = 0; iz < 16; iz++)
                 {
-                    if (true)
+                    if (worldPos.y + iy <= 1)
                     {
                         SetBlock(x + ix, y + iy, z + iz, new BlockGrass());
                     }

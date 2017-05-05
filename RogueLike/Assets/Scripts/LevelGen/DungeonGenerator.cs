@@ -34,6 +34,8 @@ public class DungeonGenerator : MonoBehaviour
 
     private CellMap m_cellMap;
 
+    public World world;
+
     private class CellMap
     {
         private CellNode[,] m_cells;
@@ -330,7 +332,7 @@ public class DungeonGenerator : MonoBehaviour
 
     void Start()
     {
-        PlaceMap();
+        world.OnGenerationComplete += PlaceMap;
     }
 
     void PlaceMap()
@@ -349,12 +351,39 @@ public class DungeonGenerator : MonoBehaviour
 
         print(m_rooms.Count);
 
+        //for (int y = 0; y < m_height; y++)
+        //{
+        //    for (int x = 0; x < m_width; x++)
+        //    {
+        //        if (m_cellMap.GetCell(x, y).state == CellState.CORRIDOR || m_cellMap.GetCell(x, y).state == CellState.ROOM)
+        //        {
+        //            world.SetBlock(x, 3, y, new BlockAir());
+        //        }
+        //    }
+        //}
+
         List<Vector3> vertices = new List<Vector3>();
         List<Vector2> uvs = new List<Vector2>();
 
         for (int i = 0; i < pathNodes.Count; i++)
         {
-            vertices.AddRange(pathNodes[i].PathQuad());
+            //vertices.AddRange(pathNodes[i].PathQuad());
+
+            float midx = (pathNodes[i].x + (pathNodes[i].parent.x - pathNodes[i].x) * 0.5f) * 2;
+            float midy = (pathNodes[i].y + (pathNodes[i].parent.y - pathNodes[i].y) * 0.5f) * 2;
+
+            if (pathNodes[i].state != CellState.DOOR)
+            {
+                float localx = pathNodes[i].x * 2;
+                float localy = pathNodes[i].y * 2;
+
+                world.SetBlock(Mathf.RoundToInt(localx), 1, Mathf.RoundToInt(localy), new BlockAir());
+            }
+            if (pathNodes[i].parent == null)
+            {
+                continue;
+            }
+            world.SetBlock(Mathf.RoundToInt(midx), 1, Mathf.RoundToInt(midy), new BlockAir());
         }
 
         for (int i = 0; i < m_rooms.Count; i++)
@@ -369,40 +398,35 @@ public class DungeonGenerator : MonoBehaviour
             {
                 for (int x = localx; x < localx + sizex * 2 - 1; x++)
                 {
-                    vertices.Add(new Vector3(x, y + 1, 0));
-                    vertices.Add(new Vector3(x + 1, y + 1, 0));
-                    vertices.Add(new Vector3(x + 1, y, 0));
-                    vertices.Add(new Vector3(x, y + 1, 0));
-                    vertices.Add(new Vector3(x + 1, y, 0));
-                    vertices.Add(new Vector3(x, y, 0));
+                    world.SetBlock(x, 1, y, new BlockAir());
                 }
             }
         }
 
-        for (int i = 0; i < vertices.Count / 6; i++)
-        {
-            uvs.Add(new Vector2(0, 1));
-            uvs.Add(new Vector2(1, 1));
-            uvs.Add(new Vector2(1, 0));
-            uvs.Add(new Vector2(0, 1));
-            uvs.Add(new Vector2(1, 0));
-            uvs.Add(new Vector2(0, 0));
-        }
+        //for (int i = 0; i < vertices.Count / 6; i++)
+        //{
+        //    uvs.Add(new Vector2(0, 1));
+        //    uvs.Add(new Vector2(1, 1));
+        //    uvs.Add(new Vector2(1, 0));
+        //    uvs.Add(new Vector2(0, 1));
+        //    uvs.Add(new Vector2(1, 0));
+        //    uvs.Add(new Vector2(0, 0));
+        //}
 
-        int[] indices = new int[vertices.Count];
+        //int[] indices = new int[vertices.Count];
 
-        for (int i = 0; i < vertices.Count; i++)
-        {
-            indices[i] = i;
-        }
+        //for (int i = 0; i < vertices.Count; i++)
+        //{
+        //    indices[i] = i;
+        //}
 
-        MeshRenderer mr = gameObject.AddComponent<MeshRenderer>();
-        mr.material = material;
+        //MeshRenderer mr = gameObject.AddComponent<MeshRenderer>();
+        //mr.material = material;
 
-        MeshFilter mf = gameObject.AddComponent<MeshFilter>();
+        //MeshFilter mf = gameObject.AddComponent<MeshFilter>();
 
-        mf.mesh = new Mesh() { vertices = vertices.ToArray(), triangles = indices, uv = uvs.ToArray() };
-        mf.mesh.RecalculateNormals();
+        //mf.mesh = new Mesh() { vertices = vertices.ToArray(), triangles = indices, uv = uvs.ToArray() };
+        //mf.mesh.RecalculateNormals();
     }
 
     void PlaceRooms()
