@@ -9,16 +9,16 @@ public class BlockGrass : Block
         switch (direction)
         {
             case DIRECTION.D_UP:
-            tile.x = 2;
-            tile.y = 0;
+            tile.x = 1;
+            tile.y = 15;
             return tile;
             case DIRECTION.D_DOWN:
-            tile.x = 1;
-            tile.y = 0;
+            tile.x = 2;
+            tile.y = 15;
             return tile;
         }
         tile.x = 3;
-        tile.y = 0;
+        tile.y = 15;
         return tile;
     }
 }

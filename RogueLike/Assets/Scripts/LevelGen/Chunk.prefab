@@ -109,3 +109,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   update: 1
   world: {fileID: 0}
+  filter: {fileID: 33716400214212874}
+  collider: {fileID: 64738225752610684}

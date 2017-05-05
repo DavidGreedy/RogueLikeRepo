@@ -49,14 +49,21 @@ public class Chunk : MonoBehaviour
         }
         RenderMesh(meshData);
     }
+
     void RenderMesh(MeshData meshData)
     {
-        filter.mesh.Clear();
-        filter.mesh.vertices = meshData.vertices.ToArray();
-        filter.mesh.triangles = meshData.indices.ToArray();
+        Mesh mesh = new Mesh()
+        {
+            vertices = meshData.vertices.ToArray(),
+            triangles = meshData.indices.ToArray(),
+            uv = meshData.uvs.ToArray()
+        };
 
-        filter.mesh.uv = meshData.uvs.ToArray();
-        filter.mesh.RecalculateNormals();
+        filter.mesh.Clear();
+        mesh.RecalculateNormals();
+
+        filter.mesh = mesh;
+        collider.sharedMesh = mesh;
     }
 
     public void SetBlock(int x, int y, int z, Block block)
@@ -79,4 +86,6 @@ public class Chunk : MonoBehaviour
             update = false;
         }
     }
+
+
 }

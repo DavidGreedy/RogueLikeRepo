@@ -36,13 +36,13 @@ public class World : MonoBehaviour
 
         chunks.Add(worldPos, newChunk);
 
-        for (int iy = 0; iy < 16; iy++)
+        for (int ix = 0; ix < 16; ix++)
         {
-            for (int ix = 0; ix < 16; ix++)
+            for (int iy = 0; iy < 16; iy++)
             {
                 for (int iz = 0; iz < 16; iz++)
                 {
-                    if (iy <= 7)
+                    if (true)
                     {
                         SetBlock(x + ix, y + iy, z + iz, new BlockGrass());
                     }
@@ -87,6 +87,13 @@ public class World : MonoBehaviour
         {
             chunk.SetBlock(x - chunk.worldPosition.x, y - chunk.worldPosition.y, z - chunk.worldPosition.z, block);
             chunk.update = true;
+
+            UpdateIfEqual(x - chunk.worldPosition.x, 0, new WorldPosition(x - 1, y, z));
+            UpdateIfEqual(x - chunk.worldPosition.x, Chunk.chunkSize - 1, new WorldPosition(x + 1, y, z));
+            UpdateIfEqual(y - chunk.worldPosition.y, 0, new WorldPosition(x, y - 1, z));
+            UpdateIfEqual(y - chunk.worldPosition.y, Chunk.chunkSize - 1, new WorldPosition(x, y + 1, z));
+            UpdateIfEqual(z - chunk.worldPosition.z, 0, new WorldPosition(x, y, z - 1));
+            UpdateIfEqual(z - chunk.worldPosition.z, Chunk.chunkSize - 1, new WorldPosition(x, y, z + 1));
         }
     }
 
@@ -99,4 +106,15 @@ public class World : MonoBehaviour
             chunks.Remove(new WorldPosition(x, y, z));
         }
     }
+
+    void UpdateIfEqual(int value1, int value2, WorldPosition pos)
+    {
+        if (value1 == value2)
+        {
+            Chunk chunk = GetChunk(pos.x, pos.y, pos.z);
+            if (chunk != null)
+                chunk.update = true;
+        }
+    }
+
 }

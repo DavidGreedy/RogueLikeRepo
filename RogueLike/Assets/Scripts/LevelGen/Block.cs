@@ -4,17 +4,25 @@ using UnityEngine;
 
 public class Block
 {
-    const float tileSize = 0.25f/4f;
+    const float tileSize = 1.0f/16.0f;
 
     public virtual Tile TexturePosition(DIRECTION direction)
     {
-        Tile tile = new Tile();
-        tile.x = 0;
-        tile.y = 0;
+        Tile tile = new Tile(0, 0);
         return tile;
     }
 
-    public struct Tile { public int x; public int y; }
+    public struct Tile
+    {
+        public int x;
+        public int y;
+
+        public Tile(int x, int y)
+        {
+            this.x = x;
+            this.y = y;
+        }
+    }
 
     public enum DIRECTION
     {
@@ -141,15 +149,15 @@ public class Block
         Vector2[] UVs = new Vector2[4];
         Tile tilePos = TexturePosition(direction);
 
-        UVs[0] = new Vector2(tileSize * tilePos.x + tileSize, tileSize * tilePos.y);
-        UVs[1] = new Vector2(tileSize * tilePos.x + tileSize, tileSize * tilePos.y + tileSize);
-        UVs[2] = new Vector2(tileSize * tilePos.x, tileSize * tilePos.y + tileSize);
-        UVs[3] = new Vector2(tileSize * tilePos.x, tileSize * tilePos.y);
+        UVs[0] = new Vector2(tileSize * (float)tilePos.x + tileSize, tileSize * (float)tilePos.y);
+        UVs[1] = new Vector2(tileSize * (float)tilePos.x + tileSize, tileSize * (float)tilePos.y + tileSize);
+        UVs[2] = new Vector2(tileSize * (float)tilePos.x, tileSize * (float)tilePos.y + tileSize);
+        UVs[3] = new Vector2(tileSize * (float)tilePos.x, tileSize * (float)tilePos.y);
 
-        //UVs[0] = new Vector2(0, 0);
-        //UVs[1] = new Vector2(1, 0);
+        //UVs[0] = new Vector2(1, 0);
+        //UVs[1] = new Vector2(1, 1);
         //UVs[2] = new Vector2(0, 1);
-        //UVs[3] = new Vector2(1, 1);
+        //UVs[3] = new Vector2(0, 0);
 
         return UVs;
     }
