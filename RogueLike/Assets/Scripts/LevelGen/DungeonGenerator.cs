@@ -23,7 +23,7 @@ public class DungeonGenerator : MonoBehaviour
     [SerializeField]
     private Material material;
 
-    private enum CellState
+    public enum CellState
     {
         EMPTY = 0,
         WALL = 1,
@@ -32,13 +32,16 @@ public class DungeonGenerator : MonoBehaviour
         DOOR = 4
     }
 
-    private CellMap m_cellMap;
+    public CellMap m_cellMap;
 
     public World world;
 
-    private class CellMap
+    public int scale;
+
+    public class CellMap
     {
         private CellNode[,] m_cells;
+
         private int m_width, m_height;
 
         public bool wrap = false;
@@ -86,6 +89,11 @@ public class DungeonGenerator : MonoBehaviour
                 return m_cells[x, y];
             }
             return null;
+        }
+
+        public CellNode[,] GetCells()
+        {
+            return m_cells;
         }
 
         public void SetCellState(int x, int y, CellState state)
@@ -235,6 +243,7 @@ public class DungeonGenerator : MonoBehaviour
             m_cells[nx, ny].cellNeighbourValue = checkBitSet.Bits;
 
         }
+
         public void SetCellValues()
         {
             for (int y = 0; y < m_height; y++)
@@ -345,89 +354,96 @@ public class DungeonGenerator : MonoBehaviour
         PlaceRooms();
         PlacePath();
 
-        //m_cellMap.SetCellValues();
+        CellNode[,] nodes = m_cellMap.GetCells();
 
-        print(DateTime.Now - startTime);
+        CellNode[,] scaledNodes = new CellNode[nodes.GetLength(0) * scale, nodes.GetLength(1) * scale];
 
-        print(m_rooms.Count);
-
-        //for (int y = 0; y < m_height; y++)
+        //for (int y = 0; y < nodes.GetLength(1); y++)
         //{
-        //    for (int x = 0; x < m_width; x++)
+        //    for (int x = 0; x < nodes.GetLength(0); x++)
         //    {
-        //        if (m_cellMap.GetCell(x, y).state == CellState.CORRIDOR || m_cellMap.GetCell(x, y).state == CellState.ROOM)
+        //        for (int i = 0; i < scale; i++)
         //        {
-        //            world.SetBlock(x, 3, y, new BlockAir());
+        //            for (int j = 0; j < scale; j++)
+        //            {
+        //                scaledNodes[(x * scale) + i, (y * scale) + j] = nodes[x, y];
+        //            }
         //        }
         //    }
         //}
 
-        List<Vector3> vertices = new List<Vector3>();
-        List<Vector2> uvs = new List<Vector2>();
-
-        for (int i = 0; i < pathNodes.Count; i++)
+        for (int y = 0; y < nodes.GetLength(1); y++)
         {
-            //vertices.AddRange(pathNodes[i].PathQuad());
-
-            float midx = (pathNodes[i].x + (pathNodes[i].parent.x - pathNodes[i].x) * 0.5f) * 2;
-            float midy = (pathNodes[i].y + (pathNodes[i].parent.y - pathNodes[i].y) * 0.5f) * 2;
-
-            if (pathNodes[i].state != CellState.DOOR)
+            for (int x = 0; x < nodes.GetLength(0); x++)
             {
-                float localx = pathNodes[i].x * 2;
-                float localy = pathNodes[i].y * 2;
-
-                world.SetBlock(Mathf.RoundToInt(localx), 1, Mathf.RoundToInt(localy), new BlockAir());
-            }
-            if (pathNodes[i].parent == null)
-            {
-                continue;
-            }
-            world.SetBlock(Mathf.RoundToInt(midx), 1, Mathf.RoundToInt(midy), new BlockAir());
-        }
-
-        for (int i = 0; i < m_rooms.Count; i++)
-        {
-            int sizex = (m_rooms[i].w);
-            int sizey = (m_rooms[i].h);
-
-            int localx = (m_rooms[i].x) * 2;
-            int localy = (m_rooms[i].y) * 2;
-
-            for (int y = localy; y < localy + sizey * 2 - 1; y++)
-            {
-                for (int x = localx; x < localx + sizex * 2 - 1; x++)
+                if (nodes[x, y].state == CellState.ROOM || nodes[x, y].state == CellState.DOOR)
                 {
                     world.SetBlock(x, 1, y, new BlockAir());
+                    world.SetBlock(x, 2, y, new BlockAir());
+                    //for (int i = 0; i < scale; i++)
+                    //{
+                    //    for (int j = 0; j < scale; j++)
+                    //    {
+                    //        world.SetBlock((x * scale) + i, 1, (y * scale) + j, new BlockAir());
+                    //        world.SetBlock((x * scale) + i, 2, (y * scale) + j, new BlockAir());
+                    //    }
+                    //}
                 }
             }
         }
 
-        //for (int i = 0; i < vertices.Count / 6; i++)
+        //m_cellMap.SetCellValues();
+
+        //print(DateTime.Now - startTime);
+
+        //print(m_rooms.Count + " ROOMS");
+
+        //for (int i = 0; i < pathNodes.Count; i++)
         //{
-        //    uvs.Add(new Vector2(0, 1));
-        //    uvs.Add(new Vector2(1, 1));
-        //    uvs.Add(new Vector2(1, 0));
-        //    uvs.Add(new Vector2(0, 1));
-        //    uvs.Add(new Vector2(1, 0));
-        //    uvs.Add(new Vector2(0, 0));
+        //    float midx = (pathNodes[i].x + (pathNodes[i].parent.x - pathNodes[i].x) * 0.5f) * 2;
+        //    float midy = (pathNodes[i].y + (pathNodes[i].parent.y - pathNodes[i].y) * 0.5f) * 2;
+
+        //    if (pathNodes[i].state != CellState.DOOR)
+        //    {
+        //        float localx = pathNodes[i].x * 2;
+        //        float localy = pathNodes[i].y * 2;
+
+        //        world.SetBlock(Mathf.RoundToInt(localx), 1, Mathf.RoundToInt(localy), new BlockAir());
+        //        world.SetBlock(Mathf.RoundToInt(localx), 2, Mathf.RoundToInt(localy), new BlockAir());
+        //    }
+        //    if (pathNodes[i].parent == null)
+        //    {
+        //        continue;
+        //    }
+        //    world.SetBlock(Mathf.RoundToInt(midx), 1, Mathf.RoundToInt(midy), new BlockAir());
+        //    world.SetBlock(Mathf.RoundToInt(midx), 2, Mathf.RoundToInt(midy), new BlockAir());
         //}
 
-        //int[] indices = new int[vertices.Count];
-
-        //for (int i = 0; i < vertices.Count; i++)
+        //for (int i = 0; i < m_rooms.Count; i++)
         //{
-        //    indices[i] = i;
+        //    int sizex = (m_rooms[i].w);
+        //    int sizey = (m_rooms[i].h);
+
+        //    int localx = (m_rooms[i].x) * 2;
+        //    int localy = (m_rooms[i].y) * 2;
+
+        //    for (int y = localy; y < localy + sizey * 2 - 1; y++)
+        //    {
+        //        for (int x = localx; x < localx + sizex * 2 - 1; x++)
+        //        {
+        //            world.SetBlock(x, 1, y, new BlockAir());
+        //            world.SetBlock(x, 2, y, new BlockAir());
+
+        //        }
+        //    }
         //}
-
-        //MeshRenderer mr = gameObject.AddComponent<MeshRenderer>();
-        //mr.material = material;
-
-        //MeshFilter mf = gameObject.AddComponent<MeshFilter>();
-
-        //mf.mesh = new Mesh() { vertices = vertices.ToArray(), triangles = indices, uv = uvs.ToArray() };
-        //mf.mesh.RecalculateNormals();
     }
+
+
+    //bool TryAddRoom(int x, int y, int w, int h)
+    //{
+
+    //}
 
     void PlaceRooms()
     {
@@ -487,8 +503,6 @@ public class DungeonGenerator : MonoBehaviour
 
     void PlacePath()
     {
-        //TODO: Space the corridors 1 cell away from each other and be able to save the result
-
         //m_rootNode = m_cellMap.GetCell(0, 0);
         m_rootNode = m_cellMap.RandomCell(CellState.EMPTY);
         Carve(m_rootNode, 0);
@@ -500,24 +514,6 @@ public class DungeonGenerator : MonoBehaviour
 
     void Carve(CellNode targetNode, int prevDir)
     {
-        /*
-         * TODO: Need to check to see if the root node only has one child and recurse until it has more than one as the root node is often a dead end.
-         */
-
-        /* 
-         * TODO: Maybe prioratise nodes with more neighbours / ones with the most connections to increase the amount of cross / t junctions
-         */
-
-        //ADD NODE
-        //IF HAS CHILDREN
-
-        //FOREACH CHILD THAT HASNT BEEN ADDED
-        //SELECT ONE CHILD AT RANDOM
-        //RECURSE
-
-        //WHEN NO CHILDREN ARE LEFT
-        //RETURN
-
         targetNode.added = true;
         if (targetNode.state != CellState.DOOR)
         {
@@ -555,60 +551,6 @@ public class DungeonGenerator : MonoBehaviour
         }
     }
 
-    class BitSet
-    {
-        private int bits;
-
-        public int Bits { get { return bits; } set { bits = value; } }
-
-        public void Set(int bit, int value)
-        {
-            bits |= value << bit;
-        }
-
-        public void Set(int bit, bool value)
-        {
-            bits |= (value ? 1 : 0) << bit;
-        }
-
-        public void Clear()
-        {
-            bits = 0;
-        }
-
-        public void Toggle(int bit)
-        {
-            bits ^= 1 << bit;
-        }
-
-        public bool Get(int bit)
-        {
-            return ((bits >> bit) & 1) == 1;
-        }
-
-        public bool[] ToArray()
-        {
-            bool[] bools = new bool[sizeof(int) * 8];
-
-            for (int i = 0; i < bools.Length; i++)
-            {
-                bools[i] = Get(i);
-            }
-
-            return bools;
-        }
-
-        public override string ToString()
-        {
-            string s = "";
-            for (int i = 0; i < sizeof(int) * 8; i++)
-            {
-                s += Get(i) ? 1 : 0;
-            }
-            return s;
-        }
-    }
-
     bool CheckNode(CellNode node)
     {
         return node != null && !node.added && (node.state == CellState.EMPTY || node.state == CellState.DOOR);
@@ -631,8 +573,6 @@ public class DungeonGenerator : MonoBehaviour
     {
         if (Application.isPlaying)
         {
-            //m_cellMap.DebugDraw();
-
             Gizmos.color = Color.green;
             if (pathNodes != null)
             {
@@ -713,7 +653,7 @@ public class DungeonGenerator : MonoBehaviour
         }
     }
 
-    class CellNode
+    public class CellNode
     {
         public int x;
         public int y;

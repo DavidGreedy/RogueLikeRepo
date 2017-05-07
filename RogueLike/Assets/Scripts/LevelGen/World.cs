@@ -15,11 +15,11 @@ public class World : MonoBehaviour
     {
         chunks = new Dictionary<WorldPosition, Chunk>();
         //chunks = new List<Chunk>();
-        for (int x = 0; x < 20; x++)
+        for (int x = -10; x < 10; x++)
         {
             for (int y = 0; y < 1; y++)
             {
-                for (int z = 0; z < 20; z++)
+                for (int z = -10; z < 10; z++)
                 {
                     CreateChunk(x * 16, y * 16, z * 16);
                 }
@@ -52,7 +52,7 @@ public class World : MonoBehaviour
             {
                 for (int iz = 0; iz < 16; iz++)
                 {
-                    if (worldPos.y + iy <= 1)
+                    if (worldPos.y + iy <= 2)
                     {
                         SetBlock(x + ix, y + iy, z + iz, new BlockGrass());
                     }

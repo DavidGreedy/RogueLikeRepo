@@ -8,8 +8,7 @@ public class Block
 
     public virtual Tile TexturePosition(DIRECTION direction)
     {
-        Tile tile = new Tile(0, 0);
-        return tile;
+        return new Tile(0, 0);
     }
 
     public struct Tile

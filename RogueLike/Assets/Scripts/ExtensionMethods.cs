@@ -1,7 +1,7 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using Random = System.Random;
 
 public static class ExtensionMethods
 {
@@ -10,14 +10,34 @@ public static class ExtensionMethods
         return (double)other.xMax >= (double)rect.xMin && (double)other.xMin <= (double)rect.xMax && (double)other.yMax >= (double)rect.yMin && (double)other.yMin <= (double)rect.yMax;
     }
 
-    public static Line Border(this Rect rect, Rect other)
-    {
-        return new Line(new Vector2(Mathf.Min(rect.xMax, other.xMax), Mathf.Min(rect.yMax, other.yMax)), new Vector2(Mathf.Max(rect.xMin, other.xMin), Mathf.Max(rect.yMin, other.yMin)));
-    }
-
     public static IEnumerable<T> Shuffle<T>(this IEnumerable<T> source)
     {
-        System.Random rnd = new System.Random();
+        Random rnd = new Random();
         return source.OrderBy<T, int>((item) => rnd.Next());
+    }
+
+    public static int ToGridPosition(float number, int gridSize)
+    {
+        return Mathf.FloorToInt(((number + gridSize - 1) / gridSize)) * gridSize;
+    }
+
+    public static int ToOddGridPosition(float number, int gridSize)
+    {
+        int position = Mathf.FloorToInt(((number + gridSize - 1) / gridSize)) * gridSize;
+        if ((position & 1) == 0)
+        {
+            position += 1;
+        }
+        return position;
+    }
+
+    public static int ToEvenGridPosition(float number, int gridSize)
+    {
+        int position = Mathf.FloorToInt(((number + gridSize - 1) / gridSize)) * gridSize;
+        if ((position & 1) == 1)
+        {
+            position += 1;
+        }
+        return position;
     }
 }

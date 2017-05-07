@@ -1,111 +1,141 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.Serialization.Formatters;
 
-[System.Serializable]
-public class Graph<T>
+class Graph
 {
-    private List<Node<T>> nodes;
-
-    public List<Node<T>> Nodes()
+    public class Edge : IComparable<Edge>
     {
-        return nodes;
-    }
+        public int src, dest;
+        public float weight;
 
-    public List<T> Data()
-    {
-        List<T> data = new List<T>();
+        public Edge()
+        { }
 
-        for (int i = 0; i < nodes.Count; i++)
+        public Edge(int src, int dest, float weight)
         {
-            data.Add(nodes[i].Data);
+            this.src = src;
+            this.dest = dest;
+            this.weight = weight;
         }
 
-        return data;
-    }
-}
-
-public class Tree<T>
-{
-    private Node<T> rootNode;
-
-    public Tree(Node<T> rootNode)
-    {
-        this.rootNode = rootNode;
-    }
-
-    public List<Node<T>> GetAll()
-    {
-        List<Node<T>> children = new List<Node<T>>();
-        rootNode.AllChildren(ref children);
-        return children;
-    }
-
-    public void Add(Node<T> node, Node<T> parent)
-    {
-
-    }
-}
-
-[System.Serializable]
-public class Node<T>
-{
-    private T data;
-    private Node<T> parent;
-    private List<Node<T>> children;
-
-    public T Data
-    {
-        get { return data; }
-    }
-
-    public Node<T> Parent
-    {
-        get { return parent; }
-        private set { parent = value; }
-    }
-
-    public List<Node<T>> Children
-    {
-        get { return children; }
-    }
-
-    public void AllChildren(ref List<Node<T>> allChildren)
-    {
-        allChildren.AddRange(children);
-        if (children != null)
+        public int CompareTo(Edge compareEdge)
         {
-            foreach (Node<T> child in children)
+            if (this.weight > compareEdge.weight)
             {
-                child.AllChildren(ref allChildren);
+                return 1;
+            }
+            else if (this.weight < compareEdge.weight)
+            {
+                return -1;
+            }
+            else
+            {
+                return 0;
             }
         }
+    };
+
+    class Subset
+    {
+        public int parent, rank;
+    };
+
+    int vertexCount, edgeCount;
+    Edge[] edges;
+
+    public Graph(List<int> vs, List<Edge> es)
+    {
+        vertexCount = vs.Count;
+        edgeCount = es.Count;
+        edges = es.ToArray();
     }
 
-    public Node(T data, Node<T> parent)
+    int Find(Subset[] subsets, int i)
     {
-        this.data = data;
-        this.parent = parent;
-
-        if (parent != null)
+        if (subsets[i].parent != i)
         {
-            parent.AddChild(this);
+            subsets[i].parent = Find(subsets, subsets[i].parent);
+        }
+
+        return subsets[i].parent;
+    }
+
+    // A function that does union of two sets of x and y
+    // (uses union by rank)
+    void Union(Subset[] subsets, int x, int y)
+    {
+        int xroot = Find(subsets, x);
+        int yroot = Find(subsets, y);
+
+        // Attach smaller rank tree under root of high rank tree
+        // (Union by Rank)
+        if (subsets[xroot].rank < subsets[yroot].rank)
+            subsets[xroot].parent = yroot;
+        else if (subsets[xroot].rank > subsets[yroot].rank)
+            subsets[yroot].parent = xroot;
+
+        // If ranks are same, then make one as root and increment
+        // its rank by one
+        else
+        {
+            subsets[yroot].parent = xroot;
+            subsets[xroot].rank++;
         }
     }
 
-    public Node<T> Root()
+    public Edge[] KruskalMST()
     {
-        return parent != null ? parent.Root() : this;
-    }
+        Edge[] kruskalMst = new Edge[vertexCount];
+        int resultIndex = 0;
+        int sortedIndex = 0;
 
-    public void AddChild(Node<T> child)
-    {
-        if (children == null)
+        for (sortedIndex = 0; sortedIndex < vertexCount; ++sortedIndex)
         {
-            this.children = new List<Node<T>>();
+            kruskalMst[sortedIndex] = new Edge();
         }
-        children.Add(child);
+
+        // Step 1:  Sort all the edges in non-decreasing order of their
+        // weight.  If we are not allowed to change the given graph, we
+        // can create a copy of array of edges
+        Array.Sort(edges);
+
+        // Allocate memory for creating vertexCount ssubsets
+        Subset[] subsets = new Subset[vertexCount];
+        for (sortedIndex = 0; sortedIndex < vertexCount; ++sortedIndex)
+        {
+            subsets[sortedIndex] = new Subset();
+        }
+
+        // Create vertexCount subsets with single elements
+        for (int v = 0; v < vertexCount; ++v)
+        {
+            subsets[v].parent = v;
+            subsets[v].rank = 0;
+        }
+
+        sortedIndex = 0; // Index used to pick next edges
+
+        // Number of edges to be taken is equal to vertexCount-1
+        while (resultIndex < vertexCount - 1)
+        {
+            // Step 2: Pick the smallest edges. And increment the index
+            // for next iteration
+            Edge next_edge = edges[sortedIndex++];
+
+            int x = Find(subsets, next_edge.src);
+            int y = Find(subsets, next_edge.dest);
+
+            // If including this edges does't cause cycle, include it
+            // in result and increment the index of result for next edges
+            if (x != y)
+            {
+                kruskalMst[resultIndex++] = next_edge;
+                Union(subsets, x, y);
+            }
+            // Else discard the next_edge
+        }
+
+        return kruskalMst;
     }
 }
 
