@@ -7,7 +7,7 @@ using Random = UnityEngine.Random;
 [System.Serializable]
 public enum NodeState
 {
-    Empty = 0, Wall = 1, Path = 2, Room = 3, Door = 4
+    Empty = 0, Wall = 1, Path = 2, Room = 3, Door = 4, Corner = 5
 }
 
 [System.Serializable]
@@ -15,16 +15,16 @@ public class LevelDebugView : MonoBehaviour
 {
     public LevelGenerator levelGenerator;
 
-    private SearchNode<NodeState> rootNode;
+    private TileNode<NodeState> rootNode;
 
     [SerializeField]
-    private SearchGrid<NodeState> grid;
+    private TileGrid<NodeState> grid;
 
-    private List<SearchNode<NodeState>> path;
+    private List<TileNode<NodeState>> path;
 
     public World world;
 
-    public Texture2D texture;
+    private Texture2D texture;
 
     private MeshFilter meshFilter;
     private MeshRenderer meshRenderer;
@@ -55,39 +55,31 @@ public class LevelDebugView : MonoBehaviour
         print(rootNode.position.x + " " + rootNode.position.y);
 
         BuildPath(ref grid, rootNode, 0);
+
         PlaceDoors();
-        //SetBlocks();
+
+        rootNode.Reduce(ref grid, NodeState.Door, NodeState.Empty);
+
+        SetBlocks();
         InitDebugTexture();
     }
 
     void SetBlocks()
     {
-        //if (grid != null)
-        //{
-        //    for (int y = 0; y < grid.Height; y++)
-        //    {
-        //        for (int x = 0; x < grid.Width; x++)
-        //        {
-        //            if (grid.GetNode(x, y).Data == NodeState.Room)
-        //            {
-        //                world.SetBlock(x, 2, y, new BlockAir());
-        //            }
-        //            //for (int i = 0; i < scale; i++)
-        //            //{
-        //            //    for (int j = 0; j < scale; j++)
-        //            //    {
-        //            //        if (grid.GetNode(x, y).Data == NodeState.Room)
-        //            //        {
-        //            //            world.SetBlock((x * scale) + i, 1, (y * scale) + j, new BlockAir());
-        //            //            world.SetBlock((x * scale) + i, 2, (y * scale) + j, new BlockAir());
-        //            //
-        //            //        }
-        //            //    }
-        //            //}
-        //        }
-        //    }
-        //}
-        List<SearchNode<NodeState>> nodes = new List<SearchNode<NodeState>>();
+        if (grid != null)
+        {
+            for (int y = 0; y < grid.Height; y++)
+            {
+                for (int x = 0; x < grid.Width; x++)
+                {
+                    if (grid.GetNode(x, y).Data == NodeState.Room || grid.GetNode(x, y).Data == NodeState.Path || grid.GetNode(x, y).Data == NodeState.Door)
+                    {
+                        world.SetBlock(x + 16, 2, y + 16, new BlockAir());
+                    }
+                }
+            }
+        }
+        List<TileNode<NodeState>> nodes = new List<TileNode<NodeState>>();
         //rootNode.GetConnections(ref nodes);
         print(nodes.Count);
         //for (int i = 0; i < nodes.Count; i++)
@@ -106,36 +98,167 @@ public class LevelDebugView : MonoBehaviour
             int yStart = (int)room.Rect.yMin;
             int xEnd = (int)room.Rect.xMax;
             int yEnd = (int)room.Rect.yMax;
-
-            int doorCount = Random.Range(1, 2);
-
-            for (int j = 0; j < doorCount; j++)
+            for (int y = yStart - 1; y < yEnd + 1; y++)
             {
-                for (int y = yStart - 1; y < yEnd + 1; y++)
+                for (int x = xStart - 1; x < xEnd + 1; x++)
                 {
-                    for (int x = xStart - 1; x < xEnd + 1; x++)
-                    {
-                        int conditions = 0;
-                        conditions += x < xStart ? 1 : 0;
-                        conditions += y < yStart ? 1 : 0;
-                        conditions += x >= xEnd ? 1 : 0;
-                        conditions += y >= yEnd ? 1 : 0;
+                    int conditions = 0;
+                    conditions += x < xStart ? 1 : 0;
+                    conditions += y < yStart ? 1 : 0;
+                    conditions += x >= xEnd ? 1 : 0;
+                    conditions += y >= yEnd ? 1 : 0;
 
-                        if (conditions == 3)
+                    if (conditions == 2)
+                    {
+                        levelData.data.SetNode(x, y, NodeState.Corner);
+
+                        for (int j = 0; j < 4; j++)
                         {
-                            levelData.data.SetNode(x, y, NodeState.Wall);
+                            grid.GetNeighbour(x, y, j * 2);
+                            if (grid.GetNeighbour(x, y, j * 2) != null && grid.GetNeighbour(x, y, j * 2).Data == NodeState.Wall)
+                            {
+                                grid.GetNeighbour(x, y, j * 2).Data = NodeState.Corner;
+                            }
                         }
                     }
                 }
             }
+
+            int placedDoors = 0;
+
+            BitSet directions = new BitSet();
+
+            while (placedDoors < 2)
+            {
+                int doorx = Random.Range(xStart, xEnd);
+                int doory = Random.Range(yStart, yEnd);
+
+                float r = Random.value;
+                TileNode<NodeState> currentNode;
+
+                if (r > 0.75f && grid.GetNode(doorx, yStart - 1).Data != NodeState.Door && grid.GetNode(doorx, yStart - 1).Data != NodeState.Corner && !directions.Get(0))
+                {
+                    currentNode = grid.GetNode(doorx, yStart - 1);
+
+                    if (currentNode.Data != NodeState.Door && currentNode.Data != NodeState.Corner && !directions.Get(0))
+                    {
+                        grid.SetNode(doorx, yStart - 1, NodeState.Door);
+                        directions.Set(0, 1);
+                        placedDoors++;
+                    }
+                }
+                else if (r > 0.5f)
+                {
+                    grid.SetNode(xStart - 1, doory, NodeState.Door);
+                    placedDoors++;
+                    directions.Set(1, 1);
+                }
+                else if (r > 0.25f)
+                {
+                    grid.SetNode(doorx, yEnd, NodeState.Door);
+                    placedDoors++;
+                    directions.Set(2, 1);
+                }
+                else
+                {
+                    grid.SetNode(xEnd, doory, NodeState.Door);
+                    placedDoors++;
+                    directions.Set(3, 1);
+                }
+            }
         }
+        //for (int i = 0; i < levelData.m_rooms.Count; i++)
+        //{
+        //    Room room = levelData.m_rooms[i];
+
+        //    float mergeRoomChance = Random.value;
+
+        //    int xStart = (int)room.Rect.xMin;
+        //    int yStart = (int)room.Rect.yMin;
+        //    int xEnd = (int)room.Rect.xMax;
+        //    int yEnd = (int)room.Rect.yMax;
+
+        //    int doorCount = Random.Range(1, 2);
+
+        //    List<TileNode<NodeState>> doorPositions = new List<TileNode<NodeState>>();
+
+        //    for (int y = yStart - 1; y < yEnd + 1; y++)
+        //    {
+        //        for (int x = xStart - 1; x < xEnd + 1; x++)
+        //        {
+        //            int conditions = 0;
+        //            conditions += x < xStart ? 1 : 0;
+        //            conditions += y < yStart ? 1 : 0;
+        //            conditions += x >= xEnd ? 1 : 0;
+        //            conditions += y >= yEnd ? 1 : 0;
+
+        //            TileNode<NodeState>[] neighbours = new TileNode<NodeState>[4];
+
+        //            for (int j = 0; j < 4; j++)
+        //            {
+        //                neighbours[j] = grid.GetNeighbour(x, y, j * 2);
+        //                //if (neighbours[j] != null && neighbours[j].Data == NodeState.Wall)
+        //                //{
+        //                //    neighbours[j].Data = NodeState.Corner;
+        //                //}
+        //            }
+
+        //            if (conditions == 2)
+        //            {
+        //                levelData.data.SetNode(x, y, NodeState.Corner);
+        //            }
+
+        //            //if (conditions == 1 && mergeRoomChance > 0.5f)
+        //            //{
+        //            //    if (neighbours[0] != null && neighbours[2] != null && neighbours[0].Data == NodeState.Room && neighbours[2].Data == NodeState.Room)
+        //            //    {
+        //            //        levelData.data.SetNode(x, y, NodeState.Room);
+        //            //    }
+        //            //    if (neighbours[1] != null && neighbours[3] != null && neighbours[1].Data == NodeState.Room && neighbours[3].Data == NodeState.Room)
+        //            //    {
+        //            //        levelData.data.SetNode(x, y, NodeState.Room);
+        //            //    }
+        //            //}
+        //            //else
+        //            {
+        //                if (levelData.data.GetNode(x, y).Data == NodeState.Wall && neighbours[0] != null && neighbours[2] != null && (neighbours[0].Data == NodeState.Room || neighbours[0].Data == NodeState.Path) && (neighbours[2].Data == NodeState.Room || neighbours[2].Data == NodeState.Path))
+        //                {
+        //                    doorPositions.Add(levelData.data.GetNode(x, y));
+        //                }
+        //                if (levelData.data.GetNode(x, y).Data == NodeState.Wall && neighbours[1] != null && neighbours[3] != null && (neighbours[1].Data == NodeState.Room || neighbours[1].Data == NodeState.Path) && (neighbours[3].Data == NodeState.Room || neighbours[3].Data == NodeState.Path))
+        //                {
+        //                    doorPositions.Add(levelData.data.GetNode(x, y));
+        //                }
+        //            }
+
+        //            //if (conditions == 1 && levelData.data.GetNode(x, y).Data != NodeState.Corner)
+        //            //{
+        //            //    if (levelData.data.GetNeighbour(x, y, 0).Data == NodeState.Room && levelData.data.GetNeighbour(x, y, 4).Data == NodeState.Room)
+        //            //    {
+        //            //        levelData.data.SetNode(x, y, NodeState.Room);
+        //            //    }
+        //            //    if (levelData.data.GetNeighbour(x, y, 2).Data == NodeState.Room && levelData.data.GetNeighbour(x, y, 6).Data == NodeState.Room)
+        //            //    {
+        //            //        levelData.data.SetNode(x, y, NodeState.Room);
+        //            //    }
+        //            //    //    //levelData.data.SetNode(x, y, NodeState.Door);
+        //            //    //    doorPositions.Add(grid.GetNode(x, y));
+        //            //}
+        //        }
+        //    }
+
+        //    for (int j = 0; j < doorPositions.Count; j++)
+        //    {
+        //        doorPositions[j].Data = NodeState.Door;
+        //    }
+        //}
     }
 
     void Update()
     {
         //if (rootNode != null)
         //{
-        //    List<SearchNode<NodeState>> nodes = new List<SearchNode<NodeState>>();
+        //    List<TileNode<NodeState>> nodes = new List<TileNode<NodeState>>();
         //    rootNode.GetConnections(ref nodes);
         //}
     }
@@ -187,61 +310,131 @@ public class LevelDebugView : MonoBehaviour
     }
 
     [System.Serializable]
-    public class SearchNode<T>
+    public class TileNode<T> where T : struct
     {
         public bool Visited = false;
         public GridPosition position;
         public T Data;
 
-        public List<SearchNode<T>> connections = new List<SearchNode<T>>();
+        public TileNode<T> parent;
+        public List<TileNode<T>> children;
 
-        public SearchNode(int x, int y, T data)
+        public TileNode(int x, int y, T data)
         {
             position = new GridPosition(x, y);
             this.Data = data;
         }
 
-        public void Connect(SearchNode<T> node)
+        public bool IsLeaf
         {
-            if (node == this)
+            get { return children == null; }
+        }
+
+        public void AddChild(TileNode<T> child)
+        {
+            if (child == this)
             { return; }
-            if (!connections.Contains(node))
+
+            if (IsLeaf)
+            { children = new List<TileNode<T>>(); }
+
+            children.Add(child);
+            child.parent = this;
+        }
+
+        public void RemoveChildren()
+        {
+            if (IsLeaf)
             {
-                connections.Add(node);
+                return;
+            }
+            for (int i = 0; i < children.Count; i++)
+            {
+                if (children[i] != null)
+                {
+                    children[i].RemoveChildren();
+                    children[i] = null;
+                }
+            }
+            children = null;
+        }
+
+        public void AllChildren(ref List<TileNode<T>> allChildren)
+        {
+            if (!IsLeaf)
+            {
+                for (int i = 0; i < children.Count; i++)
+                {
+                    if (children[i] != null)
+                    {
+                        allChildren.Add(children[i]);
+                        children[i].AllChildren(ref allChildren);
+                    }
+                }
             }
         }
 
-        public void GetConnections(ref List<SearchNode<T>> nodes)
+        public virtual bool Reduce(ref TileGrid<T> grid, T checkState, T setState)
         {
-            //if (nodes.Contains(this))
-            //{ return; }
-            for (int i = 0; i < connections.Count; i++)
+            bool save = false;
+
+            for (int i = 0; i < 4; i++)
             {
-                nodes.Add(this);
-                //Debug.DrawLine(new Vector3(position.x, 0, position.y), new Vector3(connections[i].position.x, 0, connections[i].position.y));
-                connections[i].GetConnections(ref nodes);
+                TileNode<T> node = grid.GetNeighbour(position.x, position.y, i * 2);
+                if (node != null && node.Data.Equals(checkState))
+                {
+                    save = true;
+                }
+                //if (Data.Equals(checkState))
+                //{
+                //    return true;
+                //}
+
             }
+            if (children != null)
+            {
+                for (int i = 0; i < children.Count; i++)
+                {
+                    if (children[i] != null)
+                    {
+                        if (!children[i].Reduce(ref grid, checkState, setState))
+                        {
+                            children[i].RemoveChildren();
+                            children[i] = null;
+                        }
+                        else
+                        {
+                            save = true;
+                        }
+                    }
+                }
+            }
+            if (!save)
+            {
+                Data = setState;
+            }
+            return save;
         }
     }
 
     [System.Serializable]
-    public class SearchGrid<T>
+    public class TileGrid<T> where T : struct
     {
-        private SearchNode<T>[,] SearchNodes;
+        private TileNode<T>[,] tileNodes;
         public int Width { get; private set; }
         public int Height { get; private set; }
 
-        public SearchGrid(int w, int h, T init)
+        public TileGrid(int w, int h, T init)
         {
             Width = w;
             Height = h;
-            SearchNodes = new SearchNode<T>[w, h];
+            tileNodes = new TileNode<T>[w, h];
 
             for (int y = 0; y < Height; y++)
             {
                 for (int x = 0; x < Width; x++)
                 {
-                    SearchNodes[x, y] = new SearchNode<T>(x, y, init);
+                    tileNodes[x, y] = new TileNode<T>(x, y, init);
                 }
             }
         }
@@ -258,19 +451,19 @@ public class LevelDebugView : MonoBehaviour
 
         public void SetNode(int x, int y, T data)
         {
-            SearchNodes[x, y] = new SearchNode<T>(x, y, data);
+            tileNodes[x, y] = new TileNode<T>(x, y, data);
         }
 
-        public SearchNode<T> GetNode(int x, int y)
+        public TileNode<T> GetNode(int x, int y)
         {
             if (InRangeX(x) && InRangeY(y))
             {
-                return SearchNodes[x, y];
+                return tileNodes[x, y];
             }
             return null;
         }
 
-        public SearchNode<T> GetNeighbour(int x, int y, int index) // 0 = N, 2 = E, 4 = S, 6 = W
+        public TileNode<T> GetNeighbour(int x, int y, int index) // 0 = N, 2 = E, 4 = S, 6 = W
         {
             int lx, nx, ux, ly, ny, uy;
 
@@ -300,7 +493,7 @@ public class LevelDebugView : MonoBehaviour
                 {
                     if (checkBitSet.Get(0))
                     {
-                        return SearchNodes[nx, uy];
+                        return tileNodes[nx, uy];
                     }
                 }
                 break;
@@ -308,7 +501,7 @@ public class LevelDebugView : MonoBehaviour
                 {
                     if (checkBitSet.Get(1))
                     {
-                        return SearchNodes[ux, uy];
+                        return tileNodes[ux, uy];
                     }
                 }
                 break;
@@ -316,7 +509,7 @@ public class LevelDebugView : MonoBehaviour
                 {
                     if (checkBitSet.Get(2))
                     {
-                        return SearchNodes[ux, ny];
+                        return tileNodes[ux, ny];
                     }
                 }
                 break;
@@ -324,7 +517,7 @@ public class LevelDebugView : MonoBehaviour
                 {
                     if (checkBitSet.Get(3))
                     {
-                        return SearchNodes[ux, ly];
+                        return tileNodes[ux, ly];
                     }
                 }
                 break;
@@ -332,7 +525,7 @@ public class LevelDebugView : MonoBehaviour
                 {
                     if (checkBitSet.Get(4))
                     {
-                        return SearchNodes[nx, ly];
+                        return tileNodes[nx, ly];
                     }
                 }
                 break;
@@ -340,7 +533,7 @@ public class LevelDebugView : MonoBehaviour
                 {
                     if (checkBitSet.Get(5))
                     {
-                        return SearchNodes[lx, ly];
+                        return tileNodes[lx, ly];
                     }
                 }
                 break;
@@ -348,7 +541,7 @@ public class LevelDebugView : MonoBehaviour
                 {
                     if (checkBitSet.Get(6))
                     {
-                        return SearchNodes[lx, ny];
+                        return tileNodes[lx, ny];
                     }
                 }
                 break;
@@ -356,7 +549,7 @@ public class LevelDebugView : MonoBehaviour
                 {
                     if (checkBitSet.Get(7))
                     {
-                        return SearchNodes[lx, uy];
+                        return tileNodes[lx, uy];
                     }
                 }
                 break;
@@ -406,6 +599,10 @@ public class LevelDebugView : MonoBehaviour
                     case NodeState.Path:
                     texture.SetPixel(x, y, Color.magenta);
                     break;
+
+                    case NodeState.Corner:
+                    texture.SetPixel(x, y, Color.white);
+                    break;
                 }
             }
         }
@@ -435,6 +632,7 @@ public class LevelDebugView : MonoBehaviour
             triangles = meshData.indices.ToArray(),
             uv = meshData.uvs.ToArray()
         };
+        mesh.RecalculateNormals();
 
         meshFilter.sharedMesh = mesh;
         meshRenderer.material.mainTexture = texture;
@@ -446,8 +644,8 @@ public class LevelDebugView : MonoBehaviour
     //{
     //for (int x = 0; x < grid.Width; x++)
     //{
-    //SearchNode<NodeState> targetNode = grid.GetNode(x, y);
-    //SearchNode<NodeState>[] neighbours = new SearchNode<NodeState>[8];
+    //TileNode<NodeState> targetNode = grid.GetNode(x, y);
+    //TileNode<NodeState>[] neighbours = new TileNode<NodeState>[8];
 
     //for (int i = 0; i < 8; i++)
     //{
@@ -460,21 +658,24 @@ public class LevelDebugView : MonoBehaviour
 
     //NOTE (David) Ok , so this was overcomplicated to the extreme.
     //Simple solution: Create non colliding paths by just checking two neighbours away instead of one.
-    //Sounds retarded but it works. Although for it to look proper the rooms must be positioned on an even tile and be evenly sized
+    //Sounds retarded but it works. Although for it to look proper the rooms must be positioned on an odd tile and be odd sizes
 
-    void BuildPath(ref SearchGrid<NodeState> searchGrid, SearchNode<NodeState> currentNode, int prevDir)
+    private static void BuildPath(ref TileGrid<NodeState> tileGrid, TileNode<NodeState> currentNode, int prevDir)
     {
         currentNode.Visited = true;
 
-        currentNode.Data = NodeState.Path;
+        if (currentNode.Data != NodeState.Door)
+        {
+            currentNode.Data = NodeState.Path;
+        }
 
-        SearchNode<NodeState>[] possibleChildren = new SearchNode<NodeState>[4];
+        TileNode<NodeState>[] possibleChildren = new TileNode<NodeState>[4];
         for (int i = 0; i < possibleChildren.Length; i++)
         {
-            SearchNode<NodeState> tmp = searchGrid.GetNeighbour(currentNode.position.x, currentNode.position.y, i * 2);
+            TileNode<NodeState> tmp = tileGrid.GetNeighbour(currentNode.position.x, currentNode.position.y, i * 2);
             if (tmp != null)
             {
-                possibleChildren[i] = searchGrid.GetNeighbour(tmp.position.x, tmp.position.y, i * 2);
+                possibleChildren[i] = tileGrid.GetNeighbour(tmp.position.x, tmp.position.y, i * 2);
             }
         }
 
@@ -493,19 +694,21 @@ public class LevelDebugView : MonoBehaviour
             int rand = Random.value > 0.85f ? randomIndices[Random.Range(0, randomIndices.Count)] : prevDir;
             randomIndices.Remove(rand);
 
-            SearchNode<NodeState> nextNode = possibleChildren[rand];
+            TileNode<NodeState> nextNode = possibleChildren[rand];
 
             if (nextNode != null && !nextNode.Visited && nextNode.Data == NodeState.Empty)
             {
-                currentNode.Connect(nextNode);
-                nextNode.Connect(currentNode);
-                searchGrid.GetNeighbour(currentNode.position.x, currentNode.position.y, rand * 2).Visited = true;
-                searchGrid.GetNeighbour(currentNode.position.x, currentNode.position.y, rand * 2).Data = NodeState.Path;
 
-                BuildPath(ref searchGrid, nextNode, rand);
+                TileNode<NodeState> midNode = tileGrid.GetNeighbour(currentNode.position.x, currentNode.position.y, rand * 2);
+                currentNode.AddChild(midNode);
+                midNode.AddChild(nextNode);
+
+                tileGrid.GetNeighbour(currentNode.position.x, currentNode.position.y, rand * 2).Visited = true;
+                tileGrid.GetNeighbour(currentNode.position.x, currentNode.position.y, rand * 2).Data = NodeState.Path;
+
+                BuildPath(ref tileGrid, nextNode, rand);
             }
         }
     }
-
     //TODO: Add Door placement
 }

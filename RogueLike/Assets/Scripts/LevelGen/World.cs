@@ -15,11 +15,11 @@ public class World : MonoBehaviour
     {
         chunks = new Dictionary<WorldPosition, Chunk>();
         //chunks = new List<Chunk>();
-        for (int x = -10; x < 10; x++)
+        for (int x = 0; x < 10; x++)
         {
             for (int y = 0; y < 1; y++)
             {
-                for (int z = -10; z < 10; z++)
+                for (int z = 0; z < 10; z++)
                 {
                     CreateChunk(x * 16, y * 16, z * 16);
                 }
@@ -31,7 +31,7 @@ public class World : MonoBehaviour
         }
     }
 
-    public void CreateChunk(int x, int y, int z)
+    private void CreateChunk(int x, int y, int z)
     {
         WorldPosition worldPos = new WorldPosition(x, y, z);
 
@@ -65,7 +65,7 @@ public class World : MonoBehaviour
         }
     }
 
-    public Chunk GetChunk(int x, int y, int z)
+    private Chunk GetChunk(int x, int y, int z)
     {
         float multiple = Chunk.chunkSize;
         WorldPosition pos = new WorldPosition(Mathf.FloorToInt(x / multiple) * Chunk.chunkSize,
@@ -77,14 +77,15 @@ public class World : MonoBehaviour
 
         return containerChunk;
     }
+
     public Block GetBlock(int x, int y, int z)
     {
         Chunk containerChunk = GetChunk(x, y, z);
         if (containerChunk != null)
         {
             return containerChunk.GetBlock(x - containerChunk.worldPosition.x,
-                                                  y - containerChunk.worldPosition.y,
-                                                  z - containerChunk.worldPosition.z);
+                                           y - containerChunk.worldPosition.y,
+                                           z - containerChunk.worldPosition.z);
         }
         return new BlockAir();
     }

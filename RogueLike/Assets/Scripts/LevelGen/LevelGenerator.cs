@@ -10,7 +10,7 @@ using Random = UnityEngine.Random;
 public struct LevelData
 {
     public List<Room> m_rooms;
-    public LevelDebugView.SearchGrid<NodeState> data;
+    public LevelDebugView.TileGrid<NodeState> data;
 }
 
 public class LevelGenerator : MonoBehaviour
@@ -185,7 +185,7 @@ public class LevelGenerator : MonoBehaviour
         int spacing = 8;
         int halfSpacing = spacing / 2;
 
-        m_levelData.data = new LevelDebugView.SearchGrid<NodeState>(width + spacing, height + spacing, NodeState.Empty);
+        m_levelData.data = new LevelDebugView.TileGrid<NodeState>(width + spacing, height + spacing, NodeState.Empty);
 
         foreach (Room Room in m_selectedRooms)
         {
@@ -327,5 +327,23 @@ public class Room
     public void RemoveCollider()
     {
         //GameObject.Destroy(collider);
+    }
+
+    public bool IsTouching(Room other)
+    {
+        return ((Mathf.RoundToInt(this.rect.x) == Mathf.RoundToInt(other.rect.x + other.rect.width)
+             || (Mathf.RoundToInt(this.rect.x + this.rect.width) == Mathf.RoundToInt(other.rect.x))
+             || (Mathf.RoundToInt(this.rect.y) == Mathf.RoundToInt(other.rect.y + other.rect.height))
+             || (Mathf.RoundToInt(this.rect.y + this.rect.width) == Mathf.RoundToInt(other.rect.y))));
+    }
+
+    public Rect SharedCoords(Room other) // NOTE: Make Equals than to allow rooms to touch
+    {
+        int xMin = Mathf.RoundToInt(Mathf.Max(this.rect.x, other.rect.x));
+        int yMin = Mathf.RoundToInt(Mathf.Max(this.rect.y, other.rect.y));
+        int xMax = Mathf.RoundToInt(Mathf.Min(this.rect.x + this.rect.width, other.rect.x + other.rect.width));
+        int yMax = Mathf.RoundToInt(Mathf.Min(this.rect.y + this.rect.height, other.rect.y + other.rect.height));
+
+        return new Rect(Rect.MinMaxRect(xMin, yMin, xMax - xMin, yMax - yMin));
     }
 }
