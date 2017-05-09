@@ -31,6 +31,10 @@ public class LevelDebugView : MonoBehaviour
 
     private LevelData levelData;
 
+    public event Action OnComplete = delegate {};
+
+    public int worldXOffset, worldYOffset;
+
     private void Start()
     {
         levelGenerator.OnGenerationComplete += GetLevel;
@@ -62,6 +66,24 @@ public class LevelDebugView : MonoBehaviour
 
         SetBlocks();
         InitDebugTexture();
+
+        OnComplete.Invoke();
+    }
+
+    public Room GetRandomRoom()
+    {
+        return levelData.m_rooms[Random.Range(0, levelData.m_rooms.Count - 1)];
+    }
+
+
+    public Vector2 GetRandomPointInRoom(Room room)
+    {
+        return new Vector2(Random.Range(room.Rect.xMin + 1, room.Rect.xMax - 1), Random.Range(room.Rect.yMin + 1, room.Rect.yMax - 1));
+    }
+
+    public Vector3 GetRandomWorldPointInRoom(Room room)
+    {
+        return new Vector3(Random.Range(room.Rect.xMin, room.Rect.xMax) + worldXOffset, 1.5f, Random.Range(room.Rect.yMin, room.Rect.yMax) + worldXOffset);
     }
 
     void SetBlocks()
@@ -74,7 +96,7 @@ public class LevelDebugView : MonoBehaviour
                 {
                     if (grid.GetNode(x, y).Data == NodeState.Room || grid.GetNode(x, y).Data == NodeState.Path || grid.GetNode(x, y).Data == NodeState.Door)
                     {
-                        world.SetBlock(x + 16, 2, y + 16, new BlockAir());
+                        world.SetBlock(x + worldXOffset, 2, y + worldYOffset, new BlockAir());
                     }
                 }
             }

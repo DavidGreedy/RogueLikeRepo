@@ -20,7 +20,7 @@ public class TopDownCamera : MonoBehaviour
     //private float m_maxDistance = 10.0f;
 
     [SerializeField]
-    private Transform[] m_targetTransforms;
+    private List<Transform> m_targetTransforms;
 
     [SerializeField]
     private Vector3 m_offset;
@@ -34,14 +34,21 @@ public class TopDownCamera : MonoBehaviour
     {
         Vector3 averagePosition = Vector3.zero;
 
-        for (int i = 0; i < m_targetTransforms.Length; i++)
+        for (int i = 0; i < m_targetTransforms.Count; i++)
         {
             averagePosition += m_targetTransforms[i].position;
         }
 
-        averagePosition /= m_targetTransforms.Length;
+        if (m_targetTransforms.Count > 0)
+        {
+            averagePosition /= m_targetTransforms.Count;
+            transform.position = averagePosition + m_offset;
+        }
+    }
 
-        transform.position = averagePosition + m_offset;
+    public void AddTarget(Transform target)
+    {
+        m_targetTransforms.Add(target);
     }
 
     //void Update()
@@ -49,8 +56,6 @@ public class TopDownCamera : MonoBehaviour
     //    transform.position = m_moveTargetTransform.position;
     //    transform.LookAt(m_lookTargetTransform);
     //}
-
-
 
     //public void M(Vector2 inputVector)
     //{
