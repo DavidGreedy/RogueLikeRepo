@@ -1811,8 +1811,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d925c0d1f475fc4d82fccf8a48394c9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_movementSpeed: 4
-  m_strafeSpeed: 2
+  m_movementSpeed: 3
+  m_strafeSpeed: 1
   m_rotationSpeed: 10
   m_health: {fileID: 114184745744378436}
   m_meleeWeapon: {fileID: 114482630139803642}

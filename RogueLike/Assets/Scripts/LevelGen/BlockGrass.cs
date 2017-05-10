@@ -10,15 +10,15 @@ public class BlockGrass : Block
         {
             case DIRECTION.D_UP:
             tile.x = 6;
-            tile.y = 15;
+            tile.y = 12;
             return tile;
             case DIRECTION.D_DOWN:
-            tile.x = 5;
-            tile.y = 15;
+            tile.x = 6;
+            tile.y = 12;
             return tile;
         }
-        tile.x = 5;
-        tile.y = 15;
+        tile.x = 6;
+        tile.y = 12;
         return tile;
     }
 }

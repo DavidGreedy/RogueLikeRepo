@@ -23,6 +23,6 @@ public class Game : MonoBehaviour
         Vector3 spawnPoint = levelGenerator.GetRandomWorldPointInRoom(levelGenerator.GetRandomRoom());
         print(spawnPoint);
         GameObject playerGameOject = Instantiate(playerPrefab, spawnPoint, Quaternion.identity);
-        gameCamera.GetComponent<TopDownCamera>().AddTarget(playerGameOject.transform);
+        gameCamera.GetComponent<TopDownCamera>().SetTarget(playerGameOject.transform);
     }
 }

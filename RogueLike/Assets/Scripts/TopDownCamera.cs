@@ -2,85 +2,65 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+[RequireComponent(typeof(Camera))]
 public class TopDownCamera : MonoBehaviour
 {
-    //[SerializeField]
-    //private Transform m_lookTargetTransform;
-
-    //[SerializeField]
-    //private Transform m_moveTargetTransform;
-
-    //[SerializeField]
-    //private LayerMask m_collisionLayer;
-
-    //[SerializeField]
-    //private Vector2 m_rotationSpeed = new Vector2(1.0f, 1.0f);
-
-    //[SerializeField]
-    //private float m_maxDistance = 10.0f;
+    [SerializeField]
+    private Transform m_targetTransform;
 
     [SerializeField]
-    private List<Transform> m_targetTransforms;
+    private float m_targetDistance;
 
     [SerializeField]
-    private Vector3 m_offset;
+    private float m_viewAngle;
+
+    private float m_currentAngle;
+
+    private float adjacent,opposite;
+
+    private Camera m_camera;
 
     private void Start()
     {
-        m_offset = transform.position;
+        m_camera = GetComponent<Camera>();
+
+
     }
 
     private void Update()
     {
-        Vector3 averagePosition = Vector3.zero;
-
-        for (int i = 0; i < m_targetTransforms.Count; i++)
+        if (m_targetTransform)
         {
-            averagePosition += m_targetTransforms[i].position;
-        }
+            if (m_camera.orthographic)
+            {
+                m_camera.orthographicSize = m_targetDistance;
+                adjacent = Mathf.Cos(m_viewAngle * Mathf.Deg2Rad) * 10f;
+                opposite = Mathf.Sin(m_viewAngle * Mathf.Deg2Rad) * 10f;
+            }
+            else
+            {
+                adjacent = Mathf.Cos(m_viewAngle * Mathf.Deg2Rad) * m_targetDistance;
+                opposite = Mathf.Sin(m_viewAngle * Mathf.Deg2Rad) * m_targetDistance;
 
-        if (m_targetTransforms.Count > 0)
-        {
-            averagePosition /= m_targetTransforms.Count;
-            transform.position = averagePosition + m_offset;
+            }
+
+            Rotate(10 * Time.deltaTime);
+            transform.position = m_targetTransform.position + (Quaternion.AngleAxis(m_currentAngle, Vector3.up) * new Vector3(0, opposite, -adjacent));
+
+
+            //transform.rotation = Quaternion.AngleAxis(m_viewAngle, transform.right) * Quaternion.AngleAxis(m_currentAngle, Vector3.up);
+            transform.LookAt(m_targetTransform);
         }
     }
 
-    public void AddTarget(Transform target)
+    public void SetTarget(Transform target)
     {
-        m_targetTransforms.Add(target);
+        m_targetTransform = target;
+        transform.Translate(0, target.position.y + adjacent, 0);
     }
 
-    //void Update()
-    //{
-    //    transform.position = m_moveTargetTransform.position;
-    //    transform.LookAt(m_lookTargetTransform);
-    //}
-
-    //public void M(Vector2 inputVector)
-    //{
-    //    Vector3 checkDir = (m_moveTargetTransform.position - m_lookTargetTransform.position).normalized;
-    //    Ray looktargetToMoveTargetRay = new Ray(m_lookTargetTransform.position, checkDir);
-
-    //    RaycastHit obstacleHit;
-
-    //    Physics.Raycast(looktargetToMoveTargetRay, out obstacleHit, m_maxDistance, m_collisionLayer.value);
-
-    //    if (obstacleHit.transform != null && Vector3.Distance(obstacleHit.point, m_lookTargetTransform.position) < m_maxDistance)
-    //    {
-    //        Debug.DrawLine(m_lookTargetTransform.position, m_moveTargetTransform.position, Color.red);
-    //        m_moveTargetTransform.transform.position = obstacleHit.point;
-    //    }
-    //    else
-    //    {
-    //        Debug.DrawLine(m_lookTargetTransform.position, m_moveTargetTransform.position, Color.green);
-    //        m_moveTargetTransform.transform.position = m_lookTargetTransform.transform.position + (checkDir * m_maxDistance);
-    //    }
-
-    //    m_moveTargetTransform.transform.RotateAround(m_lookTargetTransform.position, Vector3.up, inputVector.x * m_rotationSpeed.x * Time.deltaTime); // X Rot
-
-    //    m_moveTargetTransform.transform.RotateAround(m_lookTargetTransform.position, Vector3.Cross(m_lookTargetTransform.position - m_moveTargetTransform.position, Vector3.up), inputVector.y * m_rotationSpeed.y * Time.deltaTime); // Y Rot
-
-    //    //TODO: Clamp rotation so you can invert the y
-    //}
+    public void Rotate(float angle)
+    {
+        m_currentAngle += angle;
+    }
 }

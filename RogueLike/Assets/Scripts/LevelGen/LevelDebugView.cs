@@ -65,7 +65,7 @@ public class LevelDebugView : MonoBehaviour
         rootNode.Reduce(ref grid, NodeState.Door, NodeState.Empty);
 
         SetBlocks();
-        InitDebugTexture();
+        //InitDebugTexture();
 
         OnComplete.Invoke();
     }
@@ -97,6 +97,14 @@ public class LevelDebugView : MonoBehaviour
                     if (grid.GetNode(x, y).Data == NodeState.Room || grid.GetNode(x, y).Data == NodeState.Path || grid.GetNode(x, y).Data == NodeState.Door)
                     {
                         world.SetBlock(x + worldXOffset, 2, y + worldYOffset, new BlockAir());
+                    }
+
+                    if (grid.GetNode(x, y).Data == NodeState.Empty)
+                    {
+                        world.SetBlock(x + worldXOffset, 0, y + worldYOffset, new BlockAir());
+                        world.SetBlock(x + worldXOffset, 1, y + worldYOffset, new BlockAir());
+                        world.SetBlock(x + worldXOffset, 2, y + worldYOffset, new BlockAir());
+
                     }
                 }
             }
@@ -713,14 +721,13 @@ public class LevelDebugView : MonoBehaviour
 
         while (randomIndices.Count > 0)
         {
-            int rand = Random.value > 0.85f ? randomIndices[Random.Range(0, randomIndices.Count)] : prevDir;
+            int rand = Random.value > 0.55f ? randomIndices[Random.Range(0, randomIndices.Count)] : prevDir;
             randomIndices.Remove(rand);
 
             TileNode<NodeState> nextNode = possibleChildren[rand];
 
             if (nextNode != null && !nextNode.Visited && nextNode.Data == NodeState.Empty)
             {
-
                 TileNode<NodeState> midNode = tileGrid.GetNeighbour(currentNode.position.x, currentNode.position.y, rand * 2);
                 currentNode.AddChild(midNode);
                 midNode.AddChild(nextNode);
